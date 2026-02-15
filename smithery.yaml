@@ -1,0 +1,21 @@
+# Smithery MCP registry configuration
+# https://smithery.ai
+startCommand:
+  type: stdio
+  configSchema:
+    type: object
+    properties:
+      discordToken:
+        type: string
+        description: "Discord bot token"
+      guildId:
+        type: string
+        description: "Default Discord server (guild) ID"
+    required:
+      - discordToken
+  commandFunction: |-
+    (config) => ({
+      command: 'npx',
+      args: ['discord-mcp-server', '--token', config.discordToken, ...(config.guildId ? ['--guild-id', config.guildId] : [])],
+      env: {}
+    })

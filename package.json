@@ -1,0 +1,62 @@
+{
+  "name": "discord-mcp-server",
+  "version": "0.1.0",
+  "description": "A Discord MCP server for AI assistants — Bun-first, TypeScript, open-source",
+  "type": "module",
+  "main": "dist/index.js",
+  "bin": {
+    "discord-mcp-server": "dist/index.js"
+  },
+  "scripts": {
+    "dev": "bun run src/index.ts",
+    "build": "bun build src/index.ts --outdir dist --target node --format esm --external @valibot/to-json-schema --external sury --external effect",
+    "start": "node dist/index.js",
+    "typecheck": "tsc --noEmit",
+    "lint": "biome check src/",
+    "lint:fix": "biome check --write src/",
+    "inspect": "bun x fastmcp inspect --env .env src/index.ts",
+    "prepublishOnly": "bun run build",
+    "prepare": "husky"
+  },
+  "keywords": [
+    "mcp",
+    "discord",
+    "model-context-protocol",
+    "ai",
+    "claude",
+    "bun",
+    "typescript",
+    "discord-bot",
+    "fastmcp"
+  ],
+  "author": "ngoctranfire",
+  "license": "MIT",
+  "repository": {
+    "type": "git",
+    "url": "https://github.com/ngoctranfire/discord-mcp-server"
+  },
+  "engines": {
+    "bun": ">=1.0.0",
+    "node": ">=18.0.0"
+  },
+  "files": [
+    "dist",
+    "README.md",
+    "LICENSE"
+  ],
+  "dependencies": {
+    "discord.js": "^14.25.1",
+    "fastmcp": "^3.32.0",
+    "zod": "^4.3.6"
+  },
+  "devDependencies": {
+    "@biomejs/biome": "^2.3.15",
+    "@types/bun": "latest",
+    "husky": "^9.1.7",
+    "lint-staged": "^16.2.7",
+    "typescript": "^5.9.3"
+  },
+  "lint-staged": {
+    "*.ts": "biome check"
+  }
+}
