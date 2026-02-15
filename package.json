@@ -1,5 +1,5 @@
 {
-  "name": "discord-mcp-server",
+  "name": "@ncodelife/discord-mcp-server",
   "version": "0.1.0",
   "description": "A Discord MCP server for AI assistants — Bun-first, TypeScript, open-source",
   "type": "module",
@@ -8,6 +8,7 @@
     "discord-mcp-server": "dist/index.js"
   },
   "scripts": {
+    "test": "bun test",
     "dev": "bun run src/index.ts",
     "build": "bun build src/index.ts --outdir dist --target node --format esm --external @valibot/to-json-schema --external sury --external effect",
     "start": "node dist/index.js",
@@ -52,8 +53,11 @@
   "devDependencies": {
     "@biomejs/biome": "^2.3.15",
     "@types/bun": "latest",
+    "@valibot/to-json-schema": "^1.5.0",
+    "effect": "^3.19.17",
     "husky": "^9.1.7",
     "lint-staged": "^16.2.7",
+    "sury": "^11.0.0-alpha.4",
     "typescript": "^5.9.3"
   },
   "lint-staged": {

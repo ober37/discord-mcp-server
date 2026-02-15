@@ -16,6 +16,6 @@ startCommand:
   commandFunction: |-
     (config) => ({
       command: 'npx',
-      args: ['discord-mcp-server', '--token', config.discordToken, ...(config.guildId ? ['--guild-id', config.guildId] : [])],
+      args: ['@ncodelife/discord-mcp-server', '--token', config.discordToken, ...(config.guildId ? ['--guild-id', config.guildId] : [])],
       env: {}
     })

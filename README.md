@@ -4,8 +4,8 @@
     A Model Context Protocol (MCP) server that exposes Discord operations as tools for AI assistants.
   </p>
   <p align="center">
-    <a href="https://www.npmjs.com/package/discord-mcp-server"><img src="https://img.shields.io/npm/v/discord-mcp-server.svg" alt="npm version"></a>
-    <a href="https://github.com/ngoctranfire/discord-mcp-server/blob/main/LICENSE"><img src="https://img.shields.io/npm/l/discord-mcp-server.svg" alt="license"></a>
+    <a href="https://www.npmjs.com/package/@ncodelife/discord-mcp-server"><img src="https://img.shields.io/npm/v/@ncodelife/discord-mcp-server.svg" alt="npm version"></a>
+    <a href="https://github.com/ngoctranfire/discord-mcp-server/blob/main/LICENSE"><img src="https://img.shields.io/npm/l/@ncodelife/discord-mcp-server.svg" alt="license"></a>
     <a href="https://smithery.ai/server/discord-mcp-server"><img src="https://smithery.ai/badge/discord-mcp-server" alt="Smithery"></a>
   </p>
 </p>
@@ -54,13 +54,13 @@
 ### Option 1: npx (recommended)
 
 ```bash
-npx discord-mcp-server --token YOUR_BOT_TOKEN
+npx @ncodelife/discord-mcp-server --token YOUR_BOT_TOKEN
 ```
 
 ### Option 2: Install globally
 
 ```bash
-npm install -g discord-mcp-server
+npm install -g @ncodelife/discord-mcp-server
 discord-mcp-server --token YOUR_BOT_TOKEN
 ```
 
@@ -82,7 +82,7 @@ Add to your `claude_desktop_config.json`:
   "mcpServers": {
     "discord": {
       "command": "npx",
-      "args": ["discord-mcp-server", "--token", "YOUR_BOT_TOKEN"]
+      "args": ["@ncodelife/discord-mcp-server", "--token", "YOUR_BOT_TOKEN"]
     }
   }
 }
@@ -96,7 +96,7 @@ Add to your MCP settings:
 {
   "discord": {
     "command": "npx",
-    "args": ["discord-mcp-server", "--token", "YOUR_BOT_TOKEN"]
+    "args": ["@ncodelife/discord-mcp-server", "--token", "YOUR_BOT_TOKEN"]
   }
 }
 ```
