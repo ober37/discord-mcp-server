@@ -20,7 +20,7 @@ export async function createDiscordClient(token: string): Promise<Client> {
 			reject(new Error("Discord client failed to connect within 30 seconds"));
 		}, 30_000);
 
-		client.once("ready", () => {
+		client.once("clientReady", () => {
 			clearTimeout(timeout);
 			console.error(`✅ Discord bot connected as ${client.user?.tag}`);
 			resolve(client);
