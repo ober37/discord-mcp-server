@@ -1,6 +1,6 @@
 {
   "name": "@ncodelife/discord-mcp-server",
-  "version": "0.1.0",
+  "version": "0.1.1",
   "description": "A Discord MCP server for AI assistants — Bun-first, TypeScript, open-source",
   "type": "module",
   "main": "dist/index.js",
