@@ -21,10 +21,9 @@ const originalFetch = globalThis.fetch;
 
 /** Replace globalThis.fetch with a mock that returns different responses for HEAD vs GET. */
 function mockFetch(headResponse: object, getResponse: object): void {
-	// biome-ignore lint/suspicious/noExplicitAny: mocking global fetch requires any cast
 	globalThis.fetch = mock(async (_url: string, opts?: RequestInit) =>
 		opts?.method === "HEAD" ? headResponse : getResponse,
-	) as any;
+	) as unknown as typeof fetch;
 }
 
 /** Build a successful HEAD response, optionally with a content-length header. */
