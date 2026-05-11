@@ -8,7 +8,8 @@ import {
 import type { FastMCP } from "fastmcp";
 import { UserError } from "fastmcp";
 import { z } from "zod/v4";
-import { embedsParam } from "../schemas.ts";
+import { DEFAULT_MAX_FILE_BYTES, fetchAttachments, maxFileBytesForTier } from "../attachments.ts";
+import { attachmentUrlsParam, embedsParam } from "../schemas.ts";
 import { formatMessage, resolveGuild, withDiscordErrorHandling } from "../utils.ts";
 
 export function registerThreadTools(
@@ -145,8 +146,8 @@ export function registerThreadTools(
 	server.addTool({
 		name: "reply_to_thread",
 		description:
-			"Send a message in an existing thread. Supports plain text and embeds. " +
-			"At least one of `message` or `embeds` must be provided.",
+			"Send a message in an existing thread. Supports plain text, embeds, and native file attachments. " +
+			"At least one of `message`, `embeds`, or `attachmentUrls` must be provided.",
 		parameters: z
 			.object({
 				threadId: z.string().describe("ID of the thread to reply in."),
@@ -154,13 +155,20 @@ export function registerThreadTools(
 					.string()
 					.optional()
 					.describe(
-						"Message content to send (max 2000 characters). Optional if embeds are provided.",
+						"Message content to send (max 2000 characters). Optional if embeds or attachmentUrls are provided.",
 					),
 				embeds: embedsParam,
+				attachmentUrls: attachmentUrlsParam,
 			})
-			.refine((data) => data.message || (data.embeds && data.embeds.length > 0), {
-				message: "At least one of `message` or `embeds` must be provided.",
-			}),
+			.refine(
+				(data) =>
+					data.message ||
+					(data.embeds && data.embeds.length > 0) ||
+					(data.attachmentUrls && data.attachmentUrls.length > 0),
+				{
+					message: "At least one of `message`, `embeds`, or `attachmentUrls` must be provided.",
+				},
+			),
 		execute: async (args) => {
 			return withDiscordErrorHandling(async () => {
 				const thread = await client.channels.fetch(args.threadId);
@@ -168,9 +176,26 @@ export function registerThreadTools(
 					throw new UserError(`${args.threadId} is not a thread.`);
 				}
 
-				const sent = await (thread as ThreadChannel).send({
+				if (!args.message && !args.embeds?.length && !args.attachmentUrls?.length) {
+					throw new UserError(
+						"At least one of `message`, `embeds`, or `attachmentUrls` must be provided.",
+					);
+				}
+
+				// Derive tier-aware file size limit from the thread's guild
+				const threadChannel = thread as ThreadChannel;
+				const maxFileBytes = threadChannel.guild
+					? maxFileBytesForTier(threadChannel.guild.premiumTier)
+					: DEFAULT_MAX_FILE_BYTES;
+
+				const files = args.attachmentUrls?.length
+					? await fetchAttachments(args.attachmentUrls, maxFileBytes)
+					: undefined;
+
+				const sent = await threadChannel.send({
 					content: args.message || undefined,
 					embeds: args.embeds,
+					files,
 				});
 				return `✅ Reply sent in thread "${thread.name}" (Message ID: ${sent.id})`;
 			});

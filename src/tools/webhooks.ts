@@ -1,7 +1,9 @@
 import type { Client, TextChannel } from "discord.js";
 import type { FastMCP } from "fastmcp";
+import { UserError } from "fastmcp";
 import { z } from "zod/v4";
-import { embedsParam } from "../schemas.ts";
+import { fetchAttachments } from "../attachments.ts";
+import { attachmentUrlsParam, embedsParam } from "../schemas.ts";
 import { withDiscordErrorHandling } from "../utils.ts";
 
 export function registerWebhookTools(
@@ -79,8 +81,9 @@ export function registerWebhookTools(
 	server.addTool({
 		name: "send_webhook_message",
 		description:
-			"Send a message through a Discord webhook. Supports custom username, avatar, and embeds. " +
-			"At least one of `message` or `embeds` must be provided.",
+			"Send a message through a Discord webhook. Supports custom username, avatar, embeds, and native file attachments. " +
+			"Attachment file size is capped at 8 MB (no guild context available via webhook). " +
+			"At least one of `message`, `embeds`, or `attachmentUrls` must be provided.",
 		parameters: z
 			.object({
 				webhookUrl: z.string().url().describe("Full webhook URL."),
@@ -88,15 +91,22 @@ export function registerWebhookTools(
 					.string()
 					.optional()
 					.describe(
-						"Message content to send (max 2000 characters). Optional if embeds are provided.",
+						"Message content to send (max 2000 characters). Optional if embeds or attachmentUrls are provided.",
 					),
 				username: z.string().optional().describe("Override display name for this message."),
 				avatarUrl: z.string().url().optional().describe("Override avatar URL for this message."),
 				embeds: embedsParam,
+				attachmentUrls: attachmentUrlsParam,
 			})
-			.refine((data) => data.message || (data.embeds && data.embeds.length > 0), {
-				message: "At least one of `message` or `embeds` must be provided.",
-			}),
+			.refine(
+				(data) =>
+					data.message ||
+					(data.embeds && data.embeds.length > 0) ||
+					(data.attachmentUrls && data.attachmentUrls.length > 0),
+				{
+					message: "At least one of `message`, `embeds`, or `attachmentUrls` must be provided.",
+				},
+			),
 		execute: async (args) => {
 			return withDiscordErrorHandling(async () => {
 				// Parse webhook URL to extract ID and token
@@ -105,14 +115,26 @@ export function registerWebhookTools(
 					return "Invalid webhook URL format. Expected: https://discord.com/api/webhooks/{id}/{token}";
 				}
 
+				if (!args.message && !args.embeds?.length && !args.attachmentUrls?.length) {
+					throw new UserError(
+						"At least one of `message`, `embeds`, or `attachmentUrls` must be provided.",
+					);
+				}
+
 				const [, webhookId, webhookToken] = match;
 				const webhook = await client.fetchWebhook(webhookId, webhookToken);
+
+				// Webhooks have no guild context — use the default 8 MB limit
+				const files = args.attachmentUrls?.length
+					? await fetchAttachments(args.attachmentUrls)
+					: undefined;
 
 				await webhook.send({
 					content: args.message || undefined,
 					username: args.username,
 					avatarURL: args.avatarUrl,
 					embeds: args.embeds,
+					files,
 				});
 
 				return `✅ Message sent via webhook "${webhook.name}"`;

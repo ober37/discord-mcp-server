@@ -116,7 +116,11 @@ function createMockChannel(fixture: (typeof ALL_CHANNELS)[number]): any {
 		// Text channel features
 		...(isText
 			? {
-					send: async (content: string | { content?: string; embeds?: unknown[] }) => ({
+					// guild stub gives tool handlers access to premiumTier for size-limit calculation
+					guild: { premiumTier: 0 },
+					send: async (
+						content: string | { content?: string; embeds?: unknown[]; files?: unknown[] },
+					) => ({
 						id: `new-msg-${Date.now()}`,
 						content: typeof content === "string" ? content : (content.content ?? ""),
 					}),
@@ -238,7 +242,12 @@ function createMockThread(fixture: typeof THREAD_ACTIVE | typeof THREAD_ARCHIVED
 		isThread: () => true,
 		isTextBased: () => true,
 
-		send: async (content: string | { content?: string; embeds?: unknown[] }) => ({
+		// guild stub gives tool handlers access to premiumTier for size-limit calculation
+		guild: { premiumTier: 0 },
+
+		send: async (
+			content: string | { content?: string; embeds?: unknown[]; files?: unknown[] },
+		) => ({
 			id: `new-thread-msg-${Date.now()}`,
 			content: typeof content === "string" ? content : (content.content ?? ""),
 		}),
@@ -259,7 +268,9 @@ function createMockWebhook(fixture: typeof WEBHOOK_GITHUB | typeof WEBHOOK_MONIT
 		owner: fixture.owner,
 		channelId: fixture.channelId,
 		delete: async () => {},
-		send: async (content?: string | { content?: string; embeds?: unknown[] }) => ({
+		send: async (
+			content?: string | { content?: string; embeds?: unknown[]; files?: unknown[] },
+		) => ({
 			id: `new-webhook-msg-${Date.now()}`,
 			content: typeof content === "string" ? content : (content?.content ?? ""),
 		}),
@@ -378,10 +389,7 @@ export function createMockDiscordClient(): any {
 			return {
 				id,
 				name: "Dynamic Webhook",
-				send: async (content?: string | { content?: string; embeds?: unknown[] }) => ({
-					id: `new-webhook-msg-${Date.now()}`,
-					content: typeof content === "string" ? content : (content?.content ?? ""),
-				}),
+				send: async () => ({}),
 				edit: async () => ({}),
 				delete: async () => {},
 			};

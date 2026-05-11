@@ -51,3 +51,18 @@ export const embedsParam = z
 			"thumbnail URL, colour, fields, and a clickable link. " +
 			"Use image.url / thumbnail.url to display photos inline without uploading files.",
 	);
+
+/**
+ * `attachmentUrls` parameter accepted by send_message, send_webhook_message, and reply_to_thread.
+ * Each URL is fetched server-side and uploaded to Discord as a native file attachment.
+ */
+export const attachmentUrlsParam = z
+	.array(z.string().url())
+	.max(10)
+	.optional()
+	.describe(
+		"Up to 10 URLs to fetch and upload as native Discord file attachments. " +
+			"Files are downloaded server-side and sent to Discord's CDN. " +
+			"Size limits: 8 MB (Tier 0/1), 50 MB (Tier 2), 100 MB (Tier 3). " +
+			"Webhooks always use the 8 MB limit (no guild context available).",
+	);
