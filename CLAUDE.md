@@ -188,26 +188,83 @@ Unit tests mock the Discord API — they won't catch Bun runtime issues. Any too
 ## Branching & PR workflow
 
 ```
-origin  → ober37/discord-mcp-server       (your fork — feature branches live here)
-upstream → ngoctranfire/discord-mcp-server (source repo — PRs target this)
+origin   → ober37/discord-mcp-server       (your fork — feature branches live here)
+upstream → ngoctranfire/discord-mcp-server  (source repo — PRs target this)
 ```
 
-**Before starting any feature branch:**
+### Starting a feature branch
+
+Always sync the fork before cutting a new branch:
+
 ```bash
 git fetch upstream
 git checkout main
 git merge upstream/main
 git push origin main
+git checkout -b feat/<short-name>
 ```
 
 **Branch naming:** `feat/<short-name>` (e.g. `feat/member-moderation`, `feat/invites`)
 
-**Before committing:**
-1. `bun test` — all tests pass
-2. `bun run lint` — clean (zero errors)
-3. Live smoke test of any new write operations
+---
 
-**PRs to upstream are not automatic** — open each PR only when explicitly requested, after confirming prior upstream PRs have merged.
+### Pre-commit gate
+
+All three must be clean before any commit:
+
+| Check | Command | Requirement |
+|---|---|---|
+| Tests | `bun test` | 0 failures |
+| Lint | `bun run lint` | 0 errors, 0 warnings |
+| Types | `bun run typecheck` | 0 errors |
+
+For any tool that performs a **write operation** (POST / PATCH / DELETE), also do a live smoke test against a real Discord guild before committing. Unit tests mock the API and will not catch Bun runtime issues.
+
+---
+
+### Opening a PR
+
+> ⚠️ **PRs are never opened automatically.** Always wait for the user to explicitly ask before running `gh pr create`. This applies even when all checks pass. Confirm that any prior upstream PR for this repo has already been merged before opening a new one.
+
+When the user does ask, open the PR from the fork's feature branch targeting `upstream/main`:
+
+```bash
+gh pr create \
+  --repo ngoctranfire/discord-mcp-server \
+  --base main \
+  --title "feat: <short description>" \
+  --body "$(cat <<'EOF'
+## Summary
+
+<!-- One sentence describing what this PR adds. -->
+
+## Tools added
+
+| Tool | Description |
+|---|---|
+| `tool_name` | What it does |
+
+## Intent changes
+
+<!-- List any GatewayIntentBits added or removed in src/discord.ts, or "None". -->
+
+## How to test
+
+1. Ensure the bot has `<PERMISSION>` in the test guild.
+2. Call `tool_name` with `{ ... }`.
+3. Expected result: ...
+
+## Checklist
+
+- [ ] `bun test` passes (0 failures)
+- [ ] `bun run lint` passes (0 errors)
+- [ ] `bun run typecheck` passes (0 errors)
+- [ ] Live smoke test completed for all write operations
+EOF
+)"
+```
+
+**PR title format:** `feat: <what was added>` (conventional commit style, imperative, under 70 chars)
 
 ---
 
