@@ -261,7 +261,7 @@ export const WEBHOOK_MONITORING = {
 	channelId: CHANNEL_GENERAL.id,
 } as const;
 
-// ─── Guild Member ───────────────────────────────────────────────────────────
+// ─── Guild Member (legacy, kept for backward compat) ────────────────────────
 
 export const GUILD_MEMBER = {
 	id: REGULAR_USER.id,
@@ -271,3 +271,33 @@ export const GUILD_MEMBER = {
 		remove: () => Promise.resolve(),
 	},
 } as const;
+
+// ─── Members ────────────────────────────────────────────────────────────────
+
+export const ANOTHER_USER = {
+	id: "5500000000000000003",
+	tag: "AnotherUser#5678",
+	username: "AnotherUser",
+	discriminator: "5678",
+	bot: false,
+} as const;
+
+export const MEMBER_ONE_FIXTURE = {
+	id: REGULAR_USER.id,
+	user: REGULAR_USER,
+	nickname: "RegularNick" as string | null,
+	joinedAt: new Date("2024-02-01T00:00:00.000Z"),
+	premiumSince: null as Date | null,
+	roleIds: [ROLE_MEMBER.id],
+};
+
+export const MEMBER_TWO_FIXTURE = {
+	id: ANOTHER_USER.id,
+	user: ANOTHER_USER,
+	nickname: null as string | null,
+	joinedAt: new Date("2024-03-15T00:00:00.000Z"),
+	premiumSince: new Date("2024-04-01T00:00:00.000Z") as Date | null,
+	roleIds: [ROLE_ADMIN.id, ROLE_MEMBER.id],
+};
+
+export const ALL_MEMBER_FIXTURES = [MEMBER_ONE_FIXTURE, MEMBER_TWO_FIXTURE];
