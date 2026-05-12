@@ -14,6 +14,9 @@ export function registerRoleTools(server: FastMCP, client: Client, defaultGuildI
 		execute: async (args) => {
 			return withDiscordErrorHandling(async () => {
 				const guild = await resolveGuild(client, args.guildId, defaultGuildId);
+				// Fetch all members to populate guild.members.cache so that
+				// role.members (which filters the cache) returns accurate counts.
+				await guild.members.fetch();
 				const roles = guild.roles.cache.sort((a, b) => b.position - a.position);
 
 				const lines = roles.map((role) => {

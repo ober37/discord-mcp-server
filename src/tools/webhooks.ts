@@ -1,6 +1,5 @@
 import type { Client, TextChannel } from "discord.js";
 import type { FastMCP } from "fastmcp";
-import { UserError } from "fastmcp";
 import { z } from "zod/v4";
 import { fetchAttachments } from "../attachments.ts";
 import { attachmentUrlsParam, embedsParam } from "../schemas.ts";
@@ -109,22 +108,14 @@ export function registerWebhookTools(
 			),
 		execute: async (args) => {
 			return withDiscordErrorHandling(async () => {
-				// Parse webhook URL to extract ID and token
 				const match = args.webhookUrl.match(/discord(?:app)?\.com\/api\/webhooks\/(\d+)\/(.+)/);
 				if (!match) {
 					return "Invalid webhook URL format. Expected: https://discord.com/api/webhooks/{id}/{token}";
 				}
 
-				if (!args.message && !args.embeds?.length && !args.attachmentUrls?.length) {
-					throw new UserError(
-						"At least one of `message`, `embeds`, or `attachmentUrls` must be provided.",
-					);
-				}
-
 				const [, webhookId, webhookToken] = match;
 				const webhook = await client.fetchWebhook(webhookId, webhookToken);
 
-				// Webhooks have no guild context — use the default 8 MB limit
 				const files = args.attachmentUrls?.length
 					? await fetchAttachments(args.attachmentUrls)
 					: undefined;

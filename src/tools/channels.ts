@@ -1,5 +1,6 @@
 import { ChannelType, type Client, type NonThreadGuildBasedChannel } from "discord.js";
 import type { FastMCP } from "fastmcp";
+import { UserError } from "fastmcp";
 import { z } from "zod/v4";
 import { resolveGuild, withDiscordErrorHandling } from "../utils.ts";
 
@@ -139,10 +140,10 @@ export function registerChannelTools(
 			return withDiscordErrorHandling(async () => {
 				const channel = await client.channels.fetch(args.channelId);
 				if (!channel) {
-					return `Channel ${args.channelId} not found.`;
+					throw new UserError(`Channel ${args.channelId} not found.`);
 				}
 				if (!("delete" in channel)) {
-					return "This channel type cannot be deleted.";
+					throw new UserError("This channel type cannot be deleted.");
 				}
 				const name = "name" in channel ? channel.name : args.channelId;
 				await channel.delete();
@@ -211,10 +212,10 @@ export function registerChannelTools(
 			return withDiscordErrorHandling(async () => {
 				const channel = await client.channels.fetch(args.channelId);
 				if (!channel) {
-					return `Channel ${args.channelId} not found.`;
+					throw new UserError(`Channel ${args.channelId} not found.`);
 				}
 				if (!("setParent" in channel)) {
-					return "This channel type cannot be moved.";
+					throw new UserError("This channel type cannot be moved.");
 				}
 				const name = "name" in channel ? channel.name : args.channelId;
 				await (channel as NonThreadGuildBasedChannel).setParent(args.categoryId);

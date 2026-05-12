@@ -8,10 +8,10 @@
 
 import {
 	ALL_CHANNELS,
+	ALL_MEMBER_FIXTURES,
 	ALL_ROLES,
 	BOT_USER,
 	GUILD_FIXTURE,
-	GUILD_MEMBER,
 	MESSAGE_FROM_BOT,
 	MESSAGE_SIMPLE,
 	MESSAGE_WITH_ATTACHMENTS,
@@ -295,6 +295,41 @@ function createMockRole(fixture: (typeof ALL_ROLES)[number]): any {
 	};
 }
 
+// ─── Member Mock ────────────────────────────────────────────────────────────
+
+const ROLE_MAP = new Map(ALL_ROLES.map((r) => [r.id, r]));
+
+// biome-ignore lint/suspicious/noExplicitAny: mock factory
+function createMockMember(fixture: (typeof ALL_MEMBER_FIXTURES)[number]): any {
+	const memberRoleEntries = fixture.roleIds
+		.map((id) => {
+			const role = ROLE_MAP.get(id);
+			return role
+				? ([id, { id: role.id, name: role.name, position: role.position }] as const)
+				: null;
+		})
+		.filter((e): e is [string, { id: string; name: string; position: number }] => e !== null);
+
+	return {
+		id: fixture.id,
+		user: {
+			...fixture.user,
+			displayAvatarURL: () =>
+				`https://cdn.discordapp.com/avatars/${fixture.user.id}/mock-avatar.png`,
+		},
+		nickname: fixture.nickname,
+		joinedAt: fixture.joinedAt,
+		premiumSince: fixture.premiumSince,
+		displayAvatarURL: () => `https://cdn.discordapp.com/avatars/${fixture.user.id}/mock-avatar.png`,
+		roles: {
+			cache: createCollection(memberRoleEntries),
+			add: async () => {},
+			remove: async () => {},
+		},
+		edit: async () => {},
+	};
+}
+
 // ─── Guild Mock ─────────────────────────────────────────────────────────────
 
 // biome-ignore lint/suspicious/noExplicitAny: mock factory
@@ -306,6 +341,11 @@ function createMockGuild(): any {
 	const roleEntries = ALL_ROLES.map(
 		(r) => [r.id, createMockRole(r)] as [string, ReturnType<typeof createMockRole>],
 	);
+
+	const memberEntries = ALL_MEMBER_FIXTURES.map(
+		(m) => [m.id, createMockMember(m)] as [string, ReturnType<typeof createMockMember>],
+	);
+	const membersCache = createCollection(memberEntries);
 
 	const guild = {
 		...GUILD_FIXTURE,
@@ -337,11 +377,21 @@ function createMockGuild(): any {
 			}),
 		},
 		members: {
-			fetch: async () => ({
-				...GUILD_MEMBER,
-				user: GUILD_MEMBER.user,
-				roles: GUILD_MEMBER.roles,
-			}),
+			cache: membersCache,
+			fetch: async (userId?: string) => {
+				if (typeof userId === "string") {
+					const member = membersCache.get(userId);
+					if (!member) throw new Error(`Unknown User: ${userId}`);
+					return member;
+				}
+				return membersCache;
+			},
+			list: async (opts?: { limit?: number }) => {
+				const limit = opts?.limit ?? 100;
+				const entries = Array.from(membersCache.entries()).slice(0, limit);
+				return createCollection(entries);
+			},
+			editMe: async (_opts: Record<string, unknown>) => {},
 		},
 		fetch: async () => guild,
 		fetchOwner: async () => ({

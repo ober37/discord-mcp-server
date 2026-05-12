@@ -55,7 +55,6 @@ export function registerThreadTools(
 					return formatThreadList(allThreads);
 				}
 
-				// List all active threads in the guild
 				const activeThreads = await guild.channels.fetchActiveThreads();
 				const threads = [...activeThreads.threads.values()];
 
@@ -176,13 +175,6 @@ export function registerThreadTools(
 					throw new UserError(`${args.threadId} is not a thread.`);
 				}
 
-				if (!args.message && !args.embeds?.length && !args.attachmentUrls?.length) {
-					throw new UserError(
-						"At least one of `message`, `embeds`, or `attachmentUrls` must be provided.",
-					);
-				}
-
-				// Derive tier-aware file size limit from the thread's guild
 				const threadChannel = thread as ThreadChannel;
 				const maxFileBytes = threadChannel.guild
 					? maxFileBytesForTier(threadChannel.guild.premiumTier)

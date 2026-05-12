@@ -3,6 +3,7 @@ import { registerMessageTools } from "../../tools/messages";
 import { createMockDiscordClient } from "../helpers/discord-mock";
 import {
 	CHANNEL_GENERAL,
+	CHANNEL_VOICE,
 	MESSAGE_FROM_BOT,
 	MESSAGE_SIMPLE,
 	REGULAR_USER,
@@ -94,6 +95,14 @@ describe("message tools", () => {
 				}),
 			).rejects.toThrow();
 		});
+
+		it("returns not-a-text-channel message for voice channelId", async () => {
+			const result = await callTool("send_message", {
+				channelId: CHANNEL_VOICE.id,
+				message: "Hello",
+			});
+			expect(result).toContain("not a text channel");
+		});
 	});
 
 	describe("read_messages", () => {
@@ -105,6 +114,22 @@ describe("message tools", () => {
 			expect(result).toContain(`Messages in #${CHANNEL_GENERAL.name}`);
 			expect(result).toContain(REGULAR_USER.username);
 			expect(result).toContain(MESSAGE_SIMPLE.content);
+		});
+
+		it("returns no-messages message for empty channel", async () => {
+			const channel = await client.channels.fetch(CHANNEL_GENERAL.id);
+			const originalFetch = channel.messages.fetch;
+			channel.messages.fetch = async () => ({ size: 0, sort: () => ({ map: () => [] }) });
+
+			const result = await callTool("read_messages", { channelId: CHANNEL_GENERAL.id });
+			expect(result).toContain("No messages found");
+
+			channel.messages.fetch = originalFetch;
+		});
+
+		it("returns not-a-text-channel message for voice channelId", async () => {
+			const result = await callTool("read_messages", { channelId: CHANNEL_VOICE.id });
+			expect(result).toContain("not a text channel");
 		});
 	});
 
@@ -134,6 +159,15 @@ describe("message tools", () => {
 				newMessage: "Trying to edit",
 			});
 			expect(result).toContain("Cannot edit messages from other users");
+		});
+
+		it("returns not-a-text-channel message for voice channelId", async () => {
+			const result = await callTool("edit_message", {
+				channelId: CHANNEL_VOICE.id,
+				messageId: MESSAGE_FROM_BOT.id,
+				newMessage: "Updated",
+			});
+			expect(result).toContain("not a text channel");
 		});
 	});
 
@@ -185,6 +219,28 @@ describe("message tools", () => {
 			expect(result).toContain("Removed reaction");
 			expect(result).toContain("👍");
 			expect(result).toContain(MESSAGE_SIMPLE.id);
+		});
+
+		it("silently no-ops and still returns success when emoji is not in cache", async () => {
+			// The optional chain means an absent emoji does nothing rather than throwing.
+			// This documents the behaviour so regressions in either direction are caught.
+			const channel = await client.channels.fetch(CHANNEL_GENERAL.id);
+			const msg = await channel.messages.fetch(MESSAGE_SIMPLE.id);
+			const removeSpy = mock(() => Promise.resolve());
+			// Ensure the emoji is NOT in the reactions cache
+			const originalGet = msg.reactions.cache.get;
+			msg.reactions.cache.get = () => undefined;
+
+			const result = await callTool("remove_reaction", {
+				channelId: CHANNEL_GENERAL.id,
+				messageId: MESSAGE_SIMPLE.id,
+				emoji: "🔥",
+			});
+
+			expect(result).toContain("✅");
+			expect(removeSpy).not.toHaveBeenCalled();
+
+			msg.reactions.cache.get = originalGet;
 		});
 	});
 });
