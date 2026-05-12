@@ -1,4 +1,5 @@
 import { beforeEach, describe, expect, it, mock } from "bun:test";
+import { UserError } from "fastmcp";
 import { registerMemberTools } from "../../tools/members";
 import { createMockDiscordClient } from "../helpers/discord-mock";
 import {
@@ -36,7 +37,15 @@ describe("member tools", () => {
 			expect(result).toContain(ROLE_MEMBER.name);
 		});
 
-		it("shows boost status when member is a booster", async () => {
+		it("shows '(none)' nickname for member with no nickname set", async () => {
+			const result = await callTool("get_member", {
+				userId: ANOTHER_USER.id,
+				guildId: GUILD_FIXTURE.id,
+			});
+			expect(result).toContain("(none)");
+		});
+
+		it("shows boost date when member is a booster", async () => {
 			const result = await callTool("get_member", {
 				userId: ANOTHER_USER.id,
 				guildId: GUILD_FIXTURE.id,
@@ -45,7 +54,7 @@ describe("member tools", () => {
 			expect(result).toContain("2024-04-01");
 		});
 
-		it("shows 'not boosting' when member has no premium since", async () => {
+		it("shows 'not boosting' for non-booster", async () => {
 			const result = await callTool("get_member", {
 				userId: REGULAR_USER.id,
 				guildId: GUILD_FIXTURE.id,
@@ -60,6 +69,27 @@ describe("member tools", () => {
 			});
 			expect(result).toContain(ROLE_ADMIN.name);
 			expect(result).toContain(ROLE_MEMBER.name);
+		});
+
+		it("excludes @everyone from roles display", async () => {
+			const result = await callTool("get_member", {
+				userId: REGULAR_USER.id,
+				guildId: GUILD_FIXTURE.id,
+			});
+			expect(result).not.toContain("@everyone");
+			expect(result).toContain(ROLE_MEMBER.name);
+		});
+
+		it("throws UserError for unknown userId", async () => {
+			try {
+				await callTool("get_member", {
+					userId: "0000000000000000000",
+					guildId: GUILD_FIXTURE.id,
+				});
+				expect.unreachable("Should have thrown");
+			} catch (e) {
+				expect(e).toBeInstanceOf(UserError);
+			}
 		});
 	});
 
@@ -78,6 +108,14 @@ describe("member tools", () => {
 				guildId: GUILD_FIXTURE.id,
 			});
 			expect(result).toContain(MEMBER_ONE_FIXTURE.nickname);
+		});
+
+		it("does not show nickname parenthetical when nickname is null", async () => {
+			const result = await callTool("list_members", {
+				guildId: GUILD_FIXTURE.id,
+			});
+			// MEMBER_TWO has no nickname; its entry should not have extra parens
+			expect(result).toContain(`${ANOTHER_USER.tag} (ID:`);
 		});
 
 		it("filters by role — returns only members with that role", async () => {
@@ -105,6 +143,14 @@ describe("member tools", () => {
 			});
 			expect(result).toContain("No members found");
 		});
+
+		it("respects limit — returns at most N members", async () => {
+			const result = await callTool("list_members", {
+				guildId: GUILD_FIXTURE.id,
+				limit: 1,
+			});
+			expect(result).toContain("Members (1)");
+		});
 	});
 
 	describe("edit_member", () => {
@@ -124,7 +170,7 @@ describe("member tools", () => {
 			expect(editSpy).toHaveBeenCalledWith({ nick: "NewNick" });
 		});
 
-		it("clears nickname with empty string", async () => {
+		it("clears nickname by mapping empty string to null", async () => {
 			const guild = client.guilds.cache.get(GUILD_FIXTURE.id);
 			const member = guild.members.cache.get(REGULAR_USER.id);
 			const editSpy = mock(() => Promise.resolve());
@@ -135,7 +181,8 @@ describe("member tools", () => {
 				nickname: "",
 				guildId: GUILD_FIXTURE.id,
 			});
-			expect(editSpy).toHaveBeenCalledWith({ nick: "" });
+			// discord.js requires null (not "") to clear a nickname
+			expect(editSpy).toHaveBeenCalledWith({ nick: null });
 		});
 
 		it("applies mute and deaf together", async () => {
@@ -173,15 +220,28 @@ describe("member tools", () => {
 			});
 			expect(result).toContain(REGULAR_USER.id);
 		});
+
+		it("throws UserError for unknown userId", async () => {
+			try {
+				await callTool("edit_member", {
+					userId: "0000000000000000000",
+					nickname: "Attempt",
+					guildId: GUILD_FIXTURE.id,
+				});
+				expect.unreachable("Should have thrown");
+			} catch (e) {
+				expect(e).toBeInstanceOf(UserError);
+			}
+		});
 	});
 
-	describe("fixture coverage", () => {
-		it("MEMBER_ONE_FIXTURE uses REGULAR_USER", () => {
-			expect(MEMBER_ONE_FIXTURE.id).toBe(REGULAR_USER.id);
+	describe("MEMBER_TWO_FIXTURE sanity", () => {
+		it("has no nickname — confirms null-nickname path", () => {
+			expect(MEMBER_TWO_FIXTURE.nickname).toBeNull();
 		});
 
-		it("MEMBER_TWO_FIXTURE uses ANOTHER_USER", () => {
-			expect(MEMBER_TWO_FIXTURE.id).toBe(ANOTHER_USER.id);
+		it("is a booster — confirms premiumSince path", () => {
+			expect(MEMBER_TWO_FIXTURE.premiumSince).toBeInstanceOf(Date);
 		});
 	});
 });

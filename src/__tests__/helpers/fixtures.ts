@@ -261,17 +261,6 @@ export const WEBHOOK_MONITORING = {
 	channelId: CHANNEL_GENERAL.id,
 } as const;
 
-// ─── Guild Member (legacy, kept for backward compat) ────────────────────────
-
-export const GUILD_MEMBER = {
-	id: REGULAR_USER.id,
-	user: REGULAR_USER,
-	roles: {
-		add: () => Promise.resolve(),
-		remove: () => Promise.resolve(),
-	},
-} as const;
-
 // ─── Members ────────────────────────────────────────────────────────────────
 
 export const ANOTHER_USER = {
@@ -288,7 +277,8 @@ export const MEMBER_ONE_FIXTURE = {
 	nickname: "RegularNick" as string | null,
 	joinedAt: new Date("2024-02-01T00:00:00.000Z"),
 	premiumSince: null as Date | null,
-	roleIds: [ROLE_MEMBER.id],
+	// Every Discord member has @everyone; include it so the exclusion filter is exercised
+	roleIds: [ROLE_EVERYONE.id, ROLE_MEMBER.id],
 };
 
 export const MEMBER_TWO_FIXTURE = {
@@ -297,7 +287,7 @@ export const MEMBER_TWO_FIXTURE = {
 	nickname: null as string | null,
 	joinedAt: new Date("2024-03-15T00:00:00.000Z"),
 	premiumSince: new Date("2024-04-01T00:00:00.000Z") as Date | null,
-	roleIds: [ROLE_ADMIN.id, ROLE_MEMBER.id],
+	roleIds: [ROLE_EVERYONE.id, ROLE_ADMIN.id, ROLE_MEMBER.id],
 };
 
 export const ALL_MEMBER_FIXTURES = [MEMBER_ONE_FIXTURE, MEMBER_TWO_FIXTURE];

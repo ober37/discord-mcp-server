@@ -102,7 +102,7 @@ export function registerMemberTools(
 				const member = await guild.members.fetch(args.userId);
 
 				const updates: Record<string, unknown> = {};
-				if (args.nickname !== undefined) updates.nick = args.nickname;
+				if (args.nickname !== undefined) updates.nick = args.nickname === "" ? null : args.nickname;
 				if (args.mute !== undefined) updates.mute = args.mute;
 				if (args.deaf !== undefined) updates.deaf = args.deaf;
 

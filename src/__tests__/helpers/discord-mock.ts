@@ -297,12 +297,13 @@ function createMockRole(fixture: (typeof ALL_ROLES)[number]): any {
 
 // ─── Member Mock ────────────────────────────────────────────────────────────
 
+const ROLE_MAP = new Map(ALL_ROLES.map((r) => [r.id, r]));
+
 // biome-ignore lint/suspicious/noExplicitAny: mock factory
 function createMockMember(fixture: (typeof ALL_MEMBER_FIXTURES)[number]): any {
-	const roleMap = new Map(ALL_ROLES.map((r) => [r.id, r]));
 	const memberRoleEntries = fixture.roleIds
 		.map((id) => {
-			const role = roleMap.get(id);
+			const role = ROLE_MAP.get(id);
 			return role
 				? ([id, { id: role.id, name: role.name, position: role.position }] as const)
 				: null;
