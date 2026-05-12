@@ -305,4 +305,101 @@ describe("member tools", () => {
 			expect(MEMBER_TWO_FIXTURE.premiumSince).toBeInstanceOf(Date);
 		});
 	});
+
+	describe("get_member_presence", () => {
+		// This suite needs its own beforeEach to inject a presence cache.
+		// The outer beforeEach registers tools without a cache (valid state).
+		let presenceClient: ReturnType<typeof createMockDiscordClient>;
+		let presenceCallTool: ReturnType<typeof createTestServer>["callTool"];
+
+		beforeEach(() => {
+			presenceClient = createMockDiscordClient();
+			const harness = createTestServer();
+			const presenceCache = new Map([
+				[
+					REGULAR_USER.id,
+					{
+						status: "online" as const,
+						activity: "VS Code",
+						lastSeen: "2024-02-01T12:00:00.000Z",
+					},
+				],
+				[
+					ANOTHER_USER.id,
+					{
+						status: "dnd" as const,
+						activity: null,
+						lastSeen: "2024-03-15T08:30:00.000Z",
+					},
+				],
+			]);
+			registerMemberTools(harness.server, presenceClient, GUILD_FIXTURE.id, presenceCache);
+			presenceCallTool = harness.callTool;
+		});
+
+		it("returns status, activity, and lastSeen for cached member", async () => {
+			const guild = presenceClient.guilds.cache.get(GUILD_FIXTURE.id);
+			const member = guild.members.cache.get(REGULAR_USER.id);
+			const fetchSpy = mock(() => Promise.resolve(member));
+			guild.members.fetch = fetchSpy;
+
+			const result = await presenceCallTool("get_member_presence", {
+				userId: REGULAR_USER.id,
+				guildId: GUILD_FIXTURE.id,
+			});
+
+			expect(result).toContain(REGULAR_USER.tag);
+			expect(result).toContain("Status: online");
+			expect(result).toContain("Activity: VS Code");
+			expect(result).toContain("Last seen: 2024-02-01T12:00:00.000Z");
+			expect(fetchSpy).toHaveBeenCalledWith(REGULAR_USER.id);
+		});
+
+		it("returns 'Activity: None' when cached activity is null", async () => {
+			const result = await presenceCallTool("get_member_presence", {
+				userId: ANOTHER_USER.id,
+				guildId: GUILD_FIXTURE.id,
+			});
+
+			expect(result).toContain("Status: dnd");
+			expect(result).toContain("Activity: None");
+		});
+
+		it("returns 'not yet cached' message when member is absent from cache", async () => {
+			// BOT_USER is in the guild but not in the presence cache
+			const result = await presenceCallTool("get_member_presence", {
+				userId: BOT_USER.id,
+				guildId: GUILD_FIXTURE.id,
+			});
+
+			expect(result).toContain("not yet cached");
+			expect(result).toContain("Activity: None");
+		});
+
+		it("returns 'not yet cached' when presenceCache is undefined (tool registered without cache)", async () => {
+			// Register a fresh tool set without a presence cache (simulates createSandboxServer path)
+			const noCacheClient = createMockDiscordClient();
+			const noCacheHarness = createTestServer();
+			registerMemberTools(noCacheHarness.server, noCacheClient, GUILD_FIXTURE.id);
+
+			const result = await noCacheHarness.callTool("get_member_presence", {
+				userId: REGULAR_USER.id,
+				guildId: GUILD_FIXTURE.id,
+			});
+
+			expect(result).toContain("not yet cached");
+		});
+
+		it("throws UserError for unknown userId", async () => {
+			try {
+				await presenceCallTool("get_member_presence", {
+					userId: "0000000000000000000",
+					guildId: GUILD_FIXTURE.id,
+				});
+				expect.unreachable("Should have thrown");
+			} catch (e) {
+				expect(e).toBeInstanceOf(UserError);
+			}
+		});
+	});
 });

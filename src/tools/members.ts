@@ -1,12 +1,19 @@
-import type { Client } from "discord.js";
+import type { Client, PresenceStatus } from "discord.js";
 import type { FastMCP } from "fastmcp";
 import { z } from "zod/v4";
 import { resolveGuild, withDiscordErrorHandling } from "../utils.ts";
+
+export interface PresenceData {
+	status: PresenceStatus; // "online" | "idle" | "dnd" | "offline" | "invisible"
+	activity: string | null;
+	lastSeen: string; // ISO timestamp
+}
 
 export function registerMemberTools(
 	server: FastMCP,
 	client: Client,
 	defaultGuildId?: string,
+	presenceCache?: Map<string, PresenceData>,
 ): void {
 	server.addTool({
 		name: "get_member",
@@ -124,6 +131,42 @@ export function registerMemberTools(
 				}
 
 				return `✅ Updated member ${member.user.tag} (ID: ${member.id})`;
+			});
+		},
+	});
+
+	server.addTool({
+		name: "get_member_presence",
+		description:
+			"Get a member's current online status and active activity. " +
+			"Requires the GuildPresence privileged intent to be enabled in the Discord Developer Portal. " +
+			"Returns offline status with a note if the bot has not yet received a presenceUpdate event " +
+			"for this member since last restart.",
+		parameters: z.object({
+			userId: z.string().describe("Discord user ID of the member."),
+			guildId: z.string().optional().describe("Server ID. Falls back to DISCORD_GUILD_ID env var."),
+		}),
+		execute: async (args) => {
+			return withDiscordErrorHandling(async () => {
+				// Validate member exists in guild — same pattern as get_member
+				const guild = await resolveGuild(client, args.guildId, defaultGuildId);
+				const member = await guild.members.fetch(args.userId);
+
+				const cached = presenceCache?.get(args.userId);
+				if (!cached) {
+					return [
+						`**${member.user.tag}** — Status: offline (not yet cached)`,
+						"Activity: None",
+						"Note: Presence data is only available after the bot observes a live presenceUpdate event for this member.",
+					].join("\n");
+				}
+
+				return [
+					`**${member.user.tag}**`,
+					`Status: ${cached.status}`,
+					`Activity: ${cached.activity ?? "None"}`,
+					`Last seen: ${cached.lastSeen}`,
+				].join("\n");
 			});
 		},
 	});
