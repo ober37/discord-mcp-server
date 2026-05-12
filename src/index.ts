@@ -11,6 +11,30 @@ import { registerServerInfoTools } from "./tools/server-info.ts";
 import { registerThreadTools } from "./tools/threads.ts";
 import { registerWebhookTools } from "./tools/webhooks.ts";
 
+// ─── Bun / discord.js compatibility ─────────────────────────────────────────
+// discord.js v14 calls process.emitWarning() internally for rate-limit notices
+// and deprecation hints. Bun's implementation of that Node.js API has a gap:
+// it throws instead of silently emitting the warning event, which bubbles up
+// through withDiscordErrorHandling as an opaque "process.emitWarning" error.
+// Wrapping it in a try-catch shim makes the warnings safe in all runtimes.
+if (typeof process.emitWarning === "function") {
+	const _orig = process.emitWarning.bind(process);
+	// biome-ignore lint/suspicious/noExplicitAny: overriding a Node.js built-in with complex overloads
+	(process as any).emitWarning = (...args: any[]) => {
+		try {
+			_orig(...args);
+		} catch {
+			const msg = args[0];
+			console.error(
+				"[Warning]",
+				typeof msg === "string" ? msg : ((msg as Error)?.message ?? String(msg)),
+			);
+		}
+	};
+}
+process.on("warning", (w) => console.error(`[Warning] ${w.name}: ${w.message}`));
+// ─────────────────────────────────────────────────────────────────────────────
+
 async function main() {
 	const config = loadConfig();
 

@@ -84,9 +84,12 @@ export async function withDiscordErrorHandling<T>(fn: () => Promise<T>): Promise
 		}
 
 		if (error instanceof Error) {
+			// Log full details to stderr so server-side logs capture the stack trace
+			console.error("[MCP unexpected error]", error);
 			throw new UserError(`Unexpected error: ${error.message}`);
 		}
 
+		console.error("[MCP unknown error]", error);
 		throw new UserError("An unknown error occurred.");
 	}
 }
