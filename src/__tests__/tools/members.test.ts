@@ -4,6 +4,7 @@ import { registerMemberTools } from "../../tools/members";
 import { createMockDiscordClient } from "../helpers/discord-mock";
 import {
 	ANOTHER_USER,
+	BOT_USER,
 	GUILD_FIXTURE,
 	MEMBER_ONE_FIXTURE,
 	MEMBER_TWO_FIXTURE,
@@ -100,7 +101,8 @@ describe("member tools", () => {
 			});
 			expect(result).toContain(REGULAR_USER.tag);
 			expect(result).toContain(ANOTHER_USER.tag);
-			expect(result).toContain("Members (2)");
+			// 3 members: REGULAR_USER, ANOTHER_USER, BOT_MEMBER_FIXTURE
+			expect(result).toContain("Members (3)");
 		});
 
 		it("shows nickname in listing when present", async () => {
@@ -232,6 +234,49 @@ describe("member tools", () => {
 			} catch (e) {
 				expect(e).toBeInstanceOf(UserError);
 			}
+		});
+
+		it("uses editMe() when bot edits its own nickname as the only field", async () => {
+			// When the bot edits only its own nickname, discord.js v14 triggers a
+			// DeprecationWarning via process.emitWarning (which can throw in Bun).
+			// The fix routes this specific case through guild.members.editMe().
+			const guild = client.guilds.cache.get(GUILD_FIXTURE.id);
+			const editMeSpy = mock(() => Promise.resolve());
+			guild.members.editMe = editMeSpy;
+			// Also ensure the bot member's edit() is NOT called
+			const botMember = guild.members.cache.get(BOT_USER.id);
+			const editSpy = mock(() => Promise.resolve());
+			botMember.edit = editSpy;
+
+			const result = await callTool("edit_member", {
+				userId: BOT_USER.id,
+				nickname: "BotNick",
+				guildId: GUILD_FIXTURE.id,
+			});
+
+			expect(result).toContain("✅");
+			expect(result).toContain(BOT_USER.id);
+			expect(editMeSpy).toHaveBeenCalledWith({ nick: "BotNick" });
+			expect(editSpy).not.toHaveBeenCalled();
+		});
+
+		it("uses member.edit() when bot sets mute along with nickname (not nick-only)", async () => {
+			const guild = client.guilds.cache.get(GUILD_FIXTURE.id);
+			const editMeSpy = mock(() => Promise.resolve());
+			guild.members.editMe = editMeSpy;
+			const botMember = guild.members.cache.get(BOT_USER.id);
+			const editSpy = mock(() => Promise.resolve());
+			botMember.edit = editSpy;
+
+			await callTool("edit_member", {
+				userId: BOT_USER.id,
+				nickname: "BotNick",
+				mute: true,
+				guildId: GUILD_FIXTURE.id,
+			});
+
+			expect(editSpy).toHaveBeenCalledWith({ nick: "BotNick", mute: true });
+			expect(editMeSpy).not.toHaveBeenCalled();
 		});
 	});
 

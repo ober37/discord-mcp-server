@@ -94,13 +94,31 @@ Key rules:
 
 ## Known runtime considerations (Bun + discord.js)
 
-### ⚠️ `process.emitWarning` shim — already in place
+### ⚠️ `process.emitWarning` shim — present but not the real fix for nickname edits
 
-discord.js v14 calls `process.emitWarning()` internally for rate-limit tracking and deprecation notices. Bun's implementation of this Node.js API has a compatibility gap: it throws instead of silently emitting, which crashes active tool calls with an opaque "process.emitWarning" error surfaced to the MCP client.
+A try-catch shim wrapping `process.emitWarning` is present in `src/index.ts`. It was added as a precaution, but investigation confirmed Bun's `process.emitWarning` does **not** throw — it works correctly. The shim is harmless; do not remove it, but do not rely on it to fix future issues.
 
-**The fix is already applied** in `src/index.ts` — a try-catch shim wraps `process.emitWarning` at startup. **Do not remove it.** If you see `process.emitWarning` errors in new tools, the shim is already there; check whether the shim block is still at the top of `index.ts` after any refactor.
+#### The real issue: bot editing its own nickname via `member.edit()`
 
-This affects **write operations** (PATCH/POST/DELETE to Discord API) more than reads. GET-only tools may appear to work in testing even without the shim, but write tools will fail in Bun without it.
+discord.js v14 has a deprecated code path in `GuildMemberManager#edit()`: when the bot edits **its own nickname** and `nick` is the **only** field in the update options, it emits a `DeprecationWarning` and reroutes internally. This deprecated path can surface unexpected errors in the MCP runtime.
+
+**The fix** (already applied in `src/tools/members.ts`) is to detect this case and call `guild.members.editMe()` instead, which bypasses the deprecated path entirely:
+
+```typescript
+const isSelfNickOnly =
+    member.id === client.user?.id && Object.keys(updates).length === 1 && "nick" in updates;
+
+if (isSelfNickOnly) {
+    await guild.members.editMe({ nick: updates.nick as string | null });
+} else {
+    await member.edit(updates);
+}
+```
+
+Apply this same pattern in any future tool that edits the bot's own fields. The key signals:
+- `member.id === client.user?.id` — bot is editing itself
+- Only `nick` in the update payload — triggers the deprecated path
+- Fix: route through `editMe()` instead of `edit()`
 
 ### Clearing nullable string fields: `""` → `null`
 

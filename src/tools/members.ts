@@ -110,7 +110,19 @@ export function registerMemberTools(
 					return "No changes specified.";
 				}
 
-				await member.edit(updates);
+				// discord.js v14 emits a DeprecationWarning (which throws in some runtimes)
+				// when the bot edits its OWN nickname and nick is the ONLY field being changed.
+				// guild.members.editMe() is the correct API for that case and bypasses the
+				// deprecated code path entirely.
+				const isSelfNickOnly =
+					member.id === client.user?.id && Object.keys(updates).length === 1 && "nick" in updates;
+
+				if (isSelfNickOnly) {
+					await guild.members.editMe({ nick: updates.nick as string | null });
+				} else {
+					await member.edit(updates);
+				}
+
 				return `✅ Updated member ${member.user.tag} (ID: ${member.id})`;
 			});
 		},

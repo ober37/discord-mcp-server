@@ -391,6 +391,7 @@ function createMockGuild(): any {
 				const entries = Array.from(membersCache.entries()).slice(0, limit);
 				return createCollection(entries);
 			},
+			editMe: async (_opts: Record<string, unknown>) => {},
 		},
 		fetch: async () => guild,
 		fetchOwner: async () => ({

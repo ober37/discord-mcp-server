@@ -290,4 +290,13 @@ export const MEMBER_TWO_FIXTURE = {
 	roleIds: [ROLE_EVERYONE.id, ROLE_ADMIN.id, ROLE_MEMBER.id],
 };
 
-export const ALL_MEMBER_FIXTURES = [MEMBER_ONE_FIXTURE, MEMBER_TWO_FIXTURE];
+export const BOT_MEMBER_FIXTURE = {
+	id: BOT_USER.id,
+	user: BOT_USER,
+	nickname: null as string | null,
+	joinedAt: new Date("2024-01-01T00:00:00.000Z"),
+	premiumSince: null as Date | null,
+	roleIds: [ROLE_EVERYONE.id],
+};
+
+export const ALL_MEMBER_FIXTURES = [MEMBER_ONE_FIXTURE, MEMBER_TWO_FIXTURE, BOT_MEMBER_FIXTURE];
