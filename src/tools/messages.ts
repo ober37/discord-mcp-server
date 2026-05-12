@@ -1,6 +1,5 @@
 import type { Client, TextChannel } from "discord.js";
 import type { FastMCP } from "fastmcp";
-import { UserError } from "fastmcp";
 import { z } from "zod/v4";
 import { DEFAULT_MAX_FILE_BYTES, fetchAttachments, maxFileBytesForTier } from "../attachments.ts";
 import { attachmentUrlsParam, embedsParam } from "../schemas.ts";
@@ -46,13 +45,6 @@ export function registerMessageTools(
 					return `Channel ${args.channelId} is not a text channel or cannot receive messages.`;
 				}
 
-				if (!args.message && !args.embeds?.length && !args.attachmentUrls?.length) {
-					throw new UserError(
-						"At least one of `message`, `embeds`, or `attachmentUrls` must be provided.",
-					);
-				}
-
-				// Derive tier-aware file size limit from the channel's guild
 				const guildChannel = channel as TextChannel;
 				const maxFileBytes = guildChannel.guild
 					? maxFileBytesForTier(guildChannel.guild.premiumTier)

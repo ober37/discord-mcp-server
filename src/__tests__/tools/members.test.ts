@@ -260,6 +260,22 @@ describe("member tools", () => {
 			expect(editSpy).not.toHaveBeenCalled();
 		});
 
+		it("uses editMe() with null when bot clears its own nickname via empty string", async () => {
+			const guild = client.guilds.cache.get(GUILD_FIXTURE.id);
+			const editMeSpy = mock(() => Promise.resolve());
+			guild.members.editMe = editMeSpy;
+			const botMember = guild.members.cache.get(BOT_USER.id);
+			botMember.edit = mock(() => Promise.resolve());
+
+			await callTool("edit_member", {
+				userId: BOT_USER.id,
+				nickname: "",
+				guildId: GUILD_FIXTURE.id,
+			});
+
+			expect(editMeSpy).toHaveBeenCalledWith({ nick: null });
+		});
+
 		it("uses member.edit() when bot sets mute along with nickname (not nick-only)", async () => {
 			const guild = client.guilds.cache.get(GUILD_FIXTURE.id);
 			const editMeSpy = mock(() => Promise.resolve());

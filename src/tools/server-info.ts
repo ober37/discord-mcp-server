@@ -1,4 +1,4 @@
-import type { Client } from "discord.js";
+import { ChannelType, type Client } from "discord.js";
 import type { FastMCP } from "fastmcp";
 import { z } from "zod/v4";
 import { resolveGuild, withDiscordErrorHandling } from "../utils.ts";
@@ -37,14 +37,13 @@ export function registerServerInfoTools(
 		execute: async (args) => {
 			return withDiscordErrorHandling(async () => {
 				const guild = await resolveGuild(client, args.guildId, defaultGuildId);
-				// Fetch full guild data
 				const fullGuild = await guild.fetch();
 
 				const owner = await fullGuild.fetchOwner();
 				const channels = fullGuild.channels.cache;
 				const textChannels = channels.filter((c) => c.isTextBased() && !c.isThread());
 				const voiceChannels = channels.filter((c) => c.isVoiceBased());
-				const categories = channels.filter((c) => c.type === 4); // CategoryChannel
+				const categories = channels.filter((c) => c.type === ChannelType.GuildCategory);
 
 				return [
 					`**${fullGuild.name}**`,

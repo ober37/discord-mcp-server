@@ -5,9 +5,11 @@ import { createMockDiscordClient } from "../helpers/discord-mock";
 import {
 	CHANNEL_DEV_CHAT,
 	CHANNEL_FORUM,
+	CHANNEL_VOICE,
 	GUILD_FIXTURE,
 	MESSAGE_SIMPLE,
 	THREAD_ACTIVE,
+	THREAD_ARCHIVED,
 } from "../helpers/fixtures";
 import { createTestServer } from "../helpers/test-server";
 
@@ -30,6 +32,50 @@ describe("thread tools", () => {
 			expect(result).toContain(THREAD_ACTIVE.name);
 			expect(result).toContain(`ID: ${THREAD_ACTIVE.id}`);
 			expect(result).toContain("🟢 Active");
+		});
+
+		it("returns no-threads message when guild has no active threads", async () => {
+			const guild = client.guilds.cache.get(GUILD_FIXTURE.id);
+			const originalFetch = guild.channels.fetchActiveThreads;
+			guild.channels.fetchActiveThreads = async () => ({
+				threads: { values: () => [][Symbol.iterator]() },
+			});
+
+			const result = await callTool("list_threads", { guildId: GUILD_FIXTURE.id });
+			expect(result).toContain("No active threads found");
+
+			guild.channels.fetchActiveThreads = originalFetch;
+		});
+
+		it("returns threads for a specific channel", async () => {
+			const result = await callTool("list_threads", {
+				guildId: GUILD_FIXTURE.id,
+				channelId: CHANNEL_DEV_CHAT.id,
+			});
+			expect(result).toContain(THREAD_ACTIVE.name);
+			expect(result).toContain(THREAD_ARCHIVED.name);
+			expect(result).toContain("📦 Archived");
+		});
+
+		it("returns no-threads message when channel has no threads", async () => {
+			const channel = await client.channels.fetch(CHANNEL_DEV_CHAT.id);
+			const empty = async () => ({ threads: { values: () => [][Symbol.iterator]() } });
+			channel.threads.fetchActive = empty;
+			channel.threads.fetchArchived = empty;
+
+			const result = await callTool("list_threads", {
+				guildId: GUILD_FIXTURE.id,
+				channelId: CHANNEL_DEV_CHAT.id,
+			});
+			expect(result).toContain("No threads found");
+		});
+
+		it("returns does-not-support-threads message for voice channelId", async () => {
+			const result = await callTool("list_threads", {
+				guildId: GUILD_FIXTURE.id,
+				channelId: CHANNEL_VOICE.id,
+			});
+			expect(result).toContain("does not support threads");
 		});
 	});
 
@@ -69,6 +115,55 @@ describe("thread tools", () => {
 				expect(e).toBeInstanceOf(UserError);
 				expect((e as UserError).message).toContain("message is required");
 			}
+		});
+
+		it("creates a forum post successfully when message is provided", async () => {
+			const result = await callTool("create_thread", {
+				channelId: CHANNEL_FORUM.id,
+				name: "Help Request",
+				message: "How do I do X?",
+			});
+			expect(result).toContain("✅");
+			expect(result).toContain("forum post");
+			expect(result).toContain("Help Request");
+		});
+
+		it("sends initial message into standalone thread when message arg is provided", async () => {
+			const channel = await client.channels.fetch(CHANNEL_DEV_CHAT.id);
+			const sendSpy = mock(() => Promise.resolve({ id: "new-msg-id", content: "Hello thread" }));
+			channel.threads.create = mock(async () => ({
+				id: "new-thread-id",
+				name: "My Thread",
+				send: sendSpy,
+			}));
+
+			await callTool("create_thread", {
+				channelId: CHANNEL_DEV_CHAT.id,
+				name: "My Thread",
+				message: "Hello thread",
+			});
+
+			expect(sendSpy).toHaveBeenCalledWith("Hello thread");
+		});
+
+		it("sends message into thread-from-message when message arg is also provided", async () => {
+			const channel = await client.channels.fetch(CHANNEL_DEV_CHAT.id);
+			const sendSpy = mock(() => Promise.resolve({ id: "reply-id" }));
+			const msg = await channel.messages.fetch(MESSAGE_SIMPLE.id);
+			msg.startThread = mock(async () => ({
+				id: "new-from-msg-thread",
+				name: "Forked Thread",
+				send: sendSpy,
+			}));
+
+			await callTool("create_thread", {
+				channelId: CHANNEL_DEV_CHAT.id,
+				name: "Forked Thread",
+				messageId: MESSAGE_SIMPLE.id,
+				message: "First reply",
+			});
+
+			expect(sendSpy).toHaveBeenCalledWith("First reply");
 		});
 	});
 
@@ -132,6 +227,18 @@ describe("thread tools", () => {
 			expect(result).toContain(`ID: ${THREAD_ACTIVE.id}`);
 			expect(result).toContain("Archived: No");
 			expect(result).toContain("Recent Messages");
+		});
+
+		it("shows no-messages text when thread is empty", async () => {
+			const thread = await client.channels.fetch(THREAD_ACTIVE.id);
+			thread.messages.fetch = async () => ({
+				size: 0,
+				sort: () => ({ map: () => [] }),
+			});
+
+			const result = await callTool("get_thread", { threadId: THREAD_ACTIVE.id });
+			expect(result).toContain("No messages in this thread");
+			expect(result).toContain(`Thread: ${THREAD_ACTIVE.name}`);
 		});
 	});
 });

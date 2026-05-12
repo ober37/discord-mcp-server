@@ -1,7 +1,12 @@
 import { beforeEach, describe, expect, it, mock } from "bun:test";
 import { registerWebhookTools } from "../../tools/webhooks";
 import { createMockDiscordClient } from "../helpers/discord-mock";
-import { CHANNEL_GENERAL, WEBHOOK_GITHUB, WEBHOOK_MONITORING } from "../helpers/fixtures";
+import {
+	CHANNEL_GENERAL,
+	CHANNEL_VOICE,
+	WEBHOOK_GITHUB,
+	WEBHOOK_MONITORING,
+} from "../helpers/fixtures";
 import { createTestServer } from "../helpers/test-server";
 
 describe("webhook tools", () => {
@@ -25,6 +30,11 @@ describe("webhook tools", () => {
 			expect(result).toContain(`ID: ${WEBHOOK_GITHUB.id}`);
 			expect(result).toContain("URL:");
 		});
+
+		it("returns does-not-support-webhooks for voice channel", async () => {
+			const result = await callTool("list_webhooks", { channelId: CHANNEL_VOICE.id });
+			expect(result).toContain("does not support webhooks");
+		});
 	});
 
 	describe("create_webhook", () => {
@@ -37,6 +47,14 @@ describe("webhook tools", () => {
 			expect(result).toContain("Created webhook");
 			expect(result).toContain("Test Webhook");
 			expect(result).toContain("URL:");
+		});
+
+		it("returns does-not-support-webhooks for voice channel", async () => {
+			const result = await callTool("create_webhook", {
+				channelId: CHANNEL_VOICE.id,
+				name: "Test",
+			});
+			expect(result).toContain("does not support webhooks");
 		});
 	});
 
@@ -118,6 +136,36 @@ describe("webhook tools", () => {
 			});
 			expect(result).toContain("Invalid webhook URL format");
 		});
+
+		it("calls webhook.send with correct content and username override", async () => {
+			const sendSpy = mock(() => Promise.resolve({ id: "sent-msg" }));
+			const originalFetch = client.fetchWebhook;
+			client.fetchWebhook = mock(async () => ({
+				name: WEBHOOK_GITHUB.name,
+				send: sendSpy,
+			}));
+
+			await callTool("send_webhook_message", {
+				webhookUrl: WEBHOOK_GITHUB.url,
+				message: "Hello from test",
+				username: "CustomBot",
+			});
+
+			expect(sendSpy).toHaveBeenCalledTimes(1);
+			const callArgs = sendSpy.mock.calls[0][0];
+			expect(callArgs.content).toBe("Hello from test");
+			expect(callArgs.username).toBe("CustomBot");
+
+			client.fetchWebhook = originalFetch;
+		});
+
+		it("accepts discordapp.com domain variant in URL", async () => {
+			const result = await callTool("send_webhook_message", {
+				webhookUrl: "https://discordapp.com/api/webhooks/9900000000000000001/abc123token",
+				message: "Alt domain",
+			});
+			expect(result).toContain("✅");
+		});
 	});
 
 	describe("edit_webhook", () => {
@@ -136,6 +184,25 @@ describe("webhook tools", () => {
 				webhookId: WEBHOOK_GITHUB.id,
 			});
 			expect(result).toContain("No changes specified");
+		});
+
+		it("calls webhook.edit with the correct updates object", async () => {
+			const editSpy = mock(() => Promise.resolve({}));
+			const originalFetch = client.fetchWebhook;
+			client.fetchWebhook = mock(async () => ({
+				name: WEBHOOK_GITHUB.name,
+				edit: editSpy,
+			}));
+
+			await callTool("edit_webhook", {
+				webhookId: WEBHOOK_GITHUB.id,
+				name: "Renamed",
+			});
+
+			expect(editSpy).toHaveBeenCalledTimes(1);
+			expect(editSpy.mock.calls[0][0]).toMatchObject({ name: "Renamed" });
+
+			client.fetchWebhook = originalFetch;
 		});
 	});
 });

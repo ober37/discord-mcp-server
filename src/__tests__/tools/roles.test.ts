@@ -7,6 +7,7 @@ import {
 	REGULAR_USER,
 	ROLE_ADMIN,
 	ROLE_EVERYONE,
+	ROLE_MEMBER,
 	ROLE_MODERATOR,
 } from "../helpers/fixtures";
 import { createTestServer } from "../helpers/test-server";
@@ -32,6 +33,26 @@ describe("role tools", () => {
 			expect(result).toContain("Member");
 			expect(result).toContain(`ID: ${ROLE_ADMIN.id}`);
 			expect(result).toContain(`[${ROLE_ADMIN.hexColor}]`);
+		});
+
+		it("calls guild.members.fetch() to hydrate cache before counting", async () => {
+			// role.members filters guild.members.cache — without fetch() counts are always 0.
+			// This test ensures the fix is never silently removed.
+			const guild = client.guilds.cache.get(GUILD_FIXTURE.id);
+			const fetchSpy = mock(() => Promise.resolve(guild.members.cache));
+			guild.members.fetch = fetchSpy;
+
+			await callTool("list_roles", { guildId: GUILD_FIXTURE.id });
+
+			expect(fetchSpy).toHaveBeenCalledTimes(1);
+		});
+
+		it("includes member count in role output", async () => {
+			const result = await callTool("list_roles", { guildId: GUILD_FIXTURE.id });
+			// ROLE_ADMIN fixture has 1 member, ROLE_MEMBER has 3
+			expect(result).toContain(`${ROLE_ADMIN.name}`);
+			expect(result).toContain("Members: 1"); // ROLE_ADMIN
+			expect(result).toContain("Members: 3"); // ROLE_MEMBER
 		});
 	});
 
@@ -89,6 +110,19 @@ describe("role tools", () => {
 				expect(e).toBeInstanceOf(UserError);
 			}
 		});
+
+		it("throws UserError for unknown roleId", async () => {
+			try {
+				await callTool("edit_role", {
+					roleId: "0000000000000000000",
+					name: "Ghost",
+					guildId: GUILD_FIXTURE.id,
+				});
+				expect.unreachable("Should have thrown");
+			} catch (e) {
+				expect(e).toBeInstanceOf(UserError);
+			}
+		});
 	});
 
 	describe("delete_role", () => {
@@ -119,6 +153,18 @@ describe("role tools", () => {
 				expect(e).toBeInstanceOf(UserError);
 			}
 		});
+
+		it("throws UserError for unknown roleId", async () => {
+			try {
+				await callTool("delete_role", {
+					roleId: "0000000000000000000",
+					guildId: GUILD_FIXTURE.id,
+				});
+				expect.unreachable("Should have thrown");
+			} catch (e) {
+				expect(e).toBeInstanceOf(UserError);
+			}
+		});
 	});
 
 	describe("assign_role", () => {
@@ -133,6 +179,36 @@ describe("role tools", () => {
 			expect(result).toContain(ROLE_ADMIN.name);
 			expect(result).toContain(REGULAR_USER.tag);
 		});
+
+		it("calls member.roles.add with the correct role object", async () => {
+			const guild = client.guilds.cache.get(GUILD_FIXTURE.id);
+			const member = guild.members.cache.get(REGULAR_USER.id);
+			const addSpy = mock(() => Promise.resolve());
+			member.roles.add = addSpy;
+
+			await callTool("assign_role", {
+				userId: REGULAR_USER.id,
+				roleId: ROLE_MEMBER.id,
+				guildId: GUILD_FIXTURE.id,
+			});
+
+			expect(addSpy).toHaveBeenCalledTimes(1);
+			const passedRole = addSpy.mock.calls[0][0];
+			expect(passedRole.id).toBe(ROLE_MEMBER.id);
+		});
+
+		it("throws UserError for unknown roleId", async () => {
+			try {
+				await callTool("assign_role", {
+					userId: REGULAR_USER.id,
+					roleId: "0000000000000000000",
+					guildId: GUILD_FIXTURE.id,
+				});
+				expect.unreachable("Should have thrown");
+			} catch (e) {
+				expect(e).toBeInstanceOf(UserError);
+			}
+		});
 	});
 
 	describe("remove_role", () => {
@@ -146,6 +222,36 @@ describe("role tools", () => {
 			expect(result).toContain("Removed role");
 			expect(result).toContain(ROLE_ADMIN.name);
 			expect(result).toContain(REGULAR_USER.tag);
+		});
+
+		it("calls member.roles.remove with the correct role object", async () => {
+			const guild = client.guilds.cache.get(GUILD_FIXTURE.id);
+			const member = guild.members.cache.get(REGULAR_USER.id);
+			const removeSpy = mock(() => Promise.resolve());
+			member.roles.remove = removeSpy;
+
+			await callTool("remove_role", {
+				userId: REGULAR_USER.id,
+				roleId: ROLE_MEMBER.id,
+				guildId: GUILD_FIXTURE.id,
+			});
+
+			expect(removeSpy).toHaveBeenCalledTimes(1);
+			const passedRole = removeSpy.mock.calls[0][0];
+			expect(passedRole.id).toBe(ROLE_MEMBER.id);
+		});
+
+		it("throws UserError for unknown roleId", async () => {
+			try {
+				await callTool("remove_role", {
+					userId: REGULAR_USER.id,
+					roleId: "0000000000000000000",
+					guildId: GUILD_FIXTURE.id,
+				});
+				expect.unreachable("Should have thrown");
+			} catch (e) {
+				expect(e).toBeInstanceOf(UserError);
+			}
 		});
 	});
 });
