@@ -152,9 +152,9 @@ describe("webhook tools", () => {
 			});
 
 			expect(sendSpy).toHaveBeenCalledTimes(1);
-			const callArgs = sendSpy.mock.calls[0][0];
-			expect(callArgs.content).toBe("Hello from test");
-			expect(callArgs.username).toBe("CustomBot");
+			expect(sendSpy).toHaveBeenCalledWith(
+				expect.objectContaining({ content: "Hello from test", username: "CustomBot" }),
+			);
 
 			client.fetchWebhook = originalFetch;
 		});
@@ -200,7 +200,7 @@ describe("webhook tools", () => {
 			});
 
 			expect(editSpy).toHaveBeenCalledTimes(1);
-			expect(editSpy.mock.calls[0][0]).toMatchObject({ name: "Renamed" });
+			expect(editSpy).toHaveBeenCalledWith(expect.objectContaining({ name: "Renamed" }));
 
 			client.fetchWebhook = originalFetch;
 		});

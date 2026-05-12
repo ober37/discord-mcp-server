@@ -33,7 +33,7 @@ describe("member tools", () => {
 			});
 			expect(result).toContain(REGULAR_USER.tag);
 			expect(result).toContain(REGULAR_USER.id);
-			expect(result).toContain(MEMBER_ONE_FIXTURE.nickname);
+			expect(result).toContain(MEMBER_ONE_FIXTURE.nickname as string);
 			expect(result).toContain("2024-02-01");
 			expect(result).toContain(ROLE_MEMBER.name);
 		});
@@ -109,7 +109,7 @@ describe("member tools", () => {
 			const result = await callTool("list_members", {
 				guildId: GUILD_FIXTURE.id,
 			});
-			expect(result).toContain(MEMBER_ONE_FIXTURE.nickname);
+			expect(result).toContain(MEMBER_ONE_FIXTURE.nickname as string);
 		});
 
 		it("does not show nickname parenthetical when nickname is null", async () => {

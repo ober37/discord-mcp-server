@@ -22,7 +22,9 @@ if (typeof process.emitWarning === "function") {
 	// biome-ignore lint/suspicious/noExplicitAny: overriding a Node.js built-in with complex overloads
 	(process as any).emitWarning = (...args: any[]) => {
 		try {
-			_orig(...args);
+			// process.emitWarning has complex overloads; args matches at runtime
+			// @ts-expect-error -- TS cannot verify any[] against emitWarning overloads; safe at runtime
+			_orig.apply(process, args);
 		} catch {
 			const msg = args[0];
 			console.error(

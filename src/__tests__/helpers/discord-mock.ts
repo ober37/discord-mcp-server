@@ -305,7 +305,10 @@ function createMockMember(fixture: (typeof ALL_MEMBER_FIXTURES)[number]): any {
 		.map((id) => {
 			const role = ROLE_MAP.get(id);
 			return role
-				? ([id, { id: role.id, name: role.name, position: role.position }] as const)
+				? ([id, { id: role.id, name: role.name, position: role.position }] as [
+						string,
+						{ id: string; name: string; position: number },
+					])
 				: null;
 		})
 		.filter((e): e is [string, { id: string; name: string; position: number }] => e !== null);
