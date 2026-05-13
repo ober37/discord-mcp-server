@@ -24,13 +24,13 @@
 | ------------------ | ------------------------------------------------------------------------------------------------------------------------------------------------------ |
 | 🏠 **Server Info** | `list_servers`, `get_server_info`                                                                                                                      |
 | 📢 **Channels**    | `list_channels`, `find_channel`, `create_text_channel`, `create_voice_channel`, `delete_channel`, `create_category`, `list_categories`, `move_channel` |
-| 💬 **Messages**    | `send_message`, `read_messages`, `edit_message`, `delete_message`, `add_reaction`, `remove_reaction`                                                   |
+| 💬 **Messages**    | `send_message`, `read_messages`, `edit_message`, `delete_message`, `add_reaction`, `remove_reaction`, `bulk_delete_messages`, `pin_message`, `unpin_message`, `get_pinned_messages`, `get_reactions`, `clear_reactions` |
 | 🔗 **Webhooks**    | `list_webhooks`, `create_webhook`, `delete_webhook`, `send_webhook_message`, `edit_webhook`                                                            |
 | 🎭 **Roles**       | `list_roles`, `create_role`, `edit_role`, `delete_role`, `assign_role`, `remove_role`                                                                  |
 | 🧵 **Threads**     | `list_threads`, `create_thread`, `reply_to_thread`, `get_thread`                                                                                       |
 | 👤 **Members**     | `get_member`, `list_members`, `edit_member`, `get_member_presence`                                                                                     |
 
-**34 tools** covering the most common Discord operations. Forum posts are supported via `create_thread`.
+**40 tools** covering the most common Discord operations. Forum posts are supported via `create_thread`.
 
 > ✦ `get_member_presence` requires the **Presence Intent** to be enabled in the Discord Developer Portal (see setup steps below). Presence is Gateway-only and cannot be fetched via REST — the tool returns live status after the bot observes the first `presenceUpdate` event for a member.
 

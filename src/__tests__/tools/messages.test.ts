@@ -1,7 +1,9 @@
 import { beforeEach, describe, expect, it, mock } from "bun:test";
+import { UserError } from "fastmcp";
 import { registerMessageTools } from "../../tools/messages";
-import { createMockDiscordClient } from "../helpers/discord-mock";
+import { createCollection, createMockDiscordClient } from "../helpers/discord-mock";
 import {
+	BOT_USER,
 	CHANNEL_GENERAL,
 	CHANNEL_VOICE,
 	MESSAGE_FROM_BOT,
@@ -241,6 +243,326 @@ describe("message tools", () => {
 			expect(removeSpy).not.toHaveBeenCalled();
 
 			msg.reactions.cache.get = originalGet;
+		});
+	});
+
+	describe("bulk_delete_messages", () => {
+		it("deletes messages and returns count confirmation", async () => {
+			const channel = await client.channels.fetch(CHANNEL_GENERAL.id);
+			const bulkDeleteSpy = mock(() =>
+				Promise.resolve(
+					createCollection([
+						[MESSAGE_SIMPLE.id, undefined],
+						[MESSAGE_FROM_BOT.id, undefined],
+					]),
+				),
+			);
+			channel.bulkDelete = bulkDeleteSpy;
+
+			const result = await callTool("bulk_delete_messages", {
+				channelId: CHANNEL_GENERAL.id,
+				messageIds: [MESSAGE_SIMPLE.id, MESSAGE_FROM_BOT.id],
+			});
+			expect(result).toContain("✅");
+			expect(result).toContain("Bulk deleted");
+			expect(result).toContain("2");
+			expect(bulkDeleteSpy).toHaveBeenCalledTimes(1);
+		});
+
+		it("passes the exact IDs to bulkDelete", async () => {
+			const channel = await client.channels.fetch(CHANNEL_GENERAL.id);
+			const bulkDeleteSpy = mock((ids: string[]) =>
+				Promise.resolve(createCollection(ids.map((id) => [id, undefined]))),
+			);
+			channel.bulkDelete = bulkDeleteSpy;
+
+			const ids = [MESSAGE_SIMPLE.id, MESSAGE_FROM_BOT.id];
+			await callTool("bulk_delete_messages", {
+				channelId: CHANNEL_GENERAL.id,
+				messageIds: ids,
+			});
+			expect(bulkDeleteSpy).toHaveBeenCalledWith(ids);
+		});
+
+		it("returns count=0 when bulkDelete returns empty collection", async () => {
+			const channel = await client.channels.fetch(CHANNEL_GENERAL.id);
+			channel.bulkDelete = mock(() => Promise.resolve(createCollection([])));
+
+			const result = await callTool("bulk_delete_messages", {
+				channelId: CHANNEL_GENERAL.id,
+				messageIds: [MESSAGE_SIMPLE.id, MESSAGE_FROM_BOT.id],
+			});
+			expect(result).toContain("Bulk deleted 0");
+		});
+
+		it("rejects fewer than 2 message IDs", async () => {
+			await expect(
+				callTool("bulk_delete_messages", {
+					channelId: CHANNEL_GENERAL.id,
+					messageIds: [MESSAGE_SIMPLE.id],
+				}),
+			).rejects.toThrow();
+		});
+
+		it("rejects more than 100 message IDs", async () => {
+			const ids = Array.from({ length: 101 }, (_, i) => `id-${i}`);
+			await expect(
+				callTool("bulk_delete_messages", {
+					channelId: CHANNEL_GENERAL.id,
+					messageIds: ids,
+				}),
+			).rejects.toThrow();
+		});
+
+		it("returns not-a-text-channel for voice channelId", async () => {
+			const result = await callTool("bulk_delete_messages", {
+				channelId: CHANNEL_VOICE.id,
+				messageIds: [MESSAGE_SIMPLE.id, MESSAGE_FROM_BOT.id],
+			});
+			expect(result).toContain("not a text channel");
+		});
+	});
+
+	describe("pin_message", () => {
+		it("pins a message and confirms with message ID and channel name", async () => {
+			const channel = await client.channels.fetch(CHANNEL_GENERAL.id);
+			const msg = await channel.messages.fetch(MESSAGE_SIMPLE.id);
+			const pinSpy = mock(() => Promise.resolve());
+			msg.pin = pinSpy;
+
+			const result = await callTool("pin_message", {
+				channelId: CHANNEL_GENERAL.id,
+				messageId: MESSAGE_SIMPLE.id,
+			});
+			expect(result).toContain("✅");
+			expect(result).toContain(MESSAGE_SIMPLE.id);
+			expect(result).toContain(`#${CHANNEL_GENERAL.name}`);
+			expect(pinSpy).toHaveBeenCalledTimes(1);
+		});
+
+		it("returns not-a-text-channel for voice channelId", async () => {
+			const result = await callTool("pin_message", {
+				channelId: CHANNEL_VOICE.id,
+				messageId: MESSAGE_SIMPLE.id,
+			});
+			expect(result).toContain("not a text channel");
+		});
+
+		it("throws UserError for unknown messageId", async () => {
+			const channel = await client.channels.fetch(CHANNEL_GENERAL.id);
+			channel.messages.fetch = async () => {
+				throw new Error("Unknown Message");
+			};
+
+			try {
+				await callTool("pin_message", {
+					channelId: CHANNEL_GENERAL.id,
+					messageId: "0000000000000000000",
+				});
+				expect.unreachable("Should have thrown");
+			} catch (e) {
+				expect(e).toBeInstanceOf(UserError);
+			}
+		});
+	});
+
+	describe("unpin_message", () => {
+		it("unpins a message and confirms with message ID and channel name", async () => {
+			const channel = await client.channels.fetch(CHANNEL_GENERAL.id);
+			const msg = await channel.messages.fetch(MESSAGE_SIMPLE.id);
+			const unpinSpy = mock(() => Promise.resolve());
+			msg.unpin = unpinSpy;
+
+			const result = await callTool("unpin_message", {
+				channelId: CHANNEL_GENERAL.id,
+				messageId: MESSAGE_SIMPLE.id,
+			});
+			expect(result).toContain("✅");
+			expect(result).toContain(MESSAGE_SIMPLE.id);
+			expect(result).toContain(`#${CHANNEL_GENERAL.name}`);
+			expect(unpinSpy).toHaveBeenCalledTimes(1);
+		});
+
+		it("returns not-a-text-channel for voice channelId", async () => {
+			const result = await callTool("unpin_message", {
+				channelId: CHANNEL_VOICE.id,
+				messageId: MESSAGE_SIMPLE.id,
+			});
+			expect(result).toContain("not a text channel");
+		});
+
+		it("throws UserError for unknown messageId", async () => {
+			const channel = await client.channels.fetch(CHANNEL_GENERAL.id);
+			channel.messages.fetch = async () => {
+				throw new Error("Unknown Message");
+			};
+
+			try {
+				await callTool("unpin_message", {
+					channelId: CHANNEL_GENERAL.id,
+					messageId: "0000000000000000000",
+				});
+				expect.unreachable("Should have thrown");
+			} catch (e) {
+				expect(e).toBeInstanceOf(UserError);
+			}
+		});
+	});
+
+	describe("get_pinned_messages", () => {
+		it("returns formatted pinned list with count header", async () => {
+			const result = await callTool("get_pinned_messages", {
+				channelId: CHANNEL_GENERAL.id,
+			});
+			expect(result).toContain(`Pinned messages in #${CHANNEL_GENERAL.name} (1)`);
+		});
+
+		it("formatted output contains bot author tag", async () => {
+			const result = await callTool("get_pinned_messages", {
+				channelId: CHANNEL_GENERAL.id,
+			});
+			expect(result).toContain(BOT_USER.tag);
+		});
+
+		it("formatted output contains pinned message content", async () => {
+			const result = await callTool("get_pinned_messages", {
+				channelId: CHANNEL_GENERAL.id,
+			});
+			expect(result).toContain(MESSAGE_FROM_BOT.content);
+		});
+
+		it("returns 'No pinned messages' when channel has none", async () => {
+			const channel = await client.channels.fetch(CHANNEL_GENERAL.id);
+			channel.messages.fetchPinned = async () => createCollection([]);
+
+			const result = await callTool("get_pinned_messages", {
+				channelId: CHANNEL_GENERAL.id,
+			});
+			expect(result).toContain("No pinned messages");
+		});
+
+		it("returns not-a-text-channel for voice channelId", async () => {
+			const result = await callTool("get_pinned_messages", {
+				channelId: CHANNEL_VOICE.id,
+			});
+			expect(result).toContain("not a text channel");
+		});
+	});
+
+	describe("get_reactions", () => {
+		it("returns users list for 👍 emoji with count header", async () => {
+			const result = await callTool("get_reactions", {
+				channelId: CHANNEL_GENERAL.id,
+				messageId: MESSAGE_SIMPLE.id,
+				emoji: "👍",
+			});
+			expect(result).toContain(`Users who reacted with 👍 (1)`);
+			expect(result).toContain(REGULAR_USER.tag);
+			expect(result).toContain(REGULAR_USER.id);
+		});
+
+		it("returns user tag and ID in output", async () => {
+			const result = await callTool("get_reactions", {
+				channelId: CHANNEL_GENERAL.id,
+				messageId: MESSAGE_SIMPLE.id,
+				emoji: "👍",
+			});
+			expect(result).toContain(`${REGULAR_USER.tag} (ID: ${REGULAR_USER.id})`);
+		});
+
+		it("returns 'No reactions found' when emoji is not on the message", async () => {
+			const result = await callTool("get_reactions", {
+				channelId: CHANNEL_GENERAL.id,
+				messageId: MESSAGE_SIMPLE.id,
+				emoji: "🔥",
+			});
+			expect(result).toContain("No reactions found for 🔥");
+			expect(result).toContain(MESSAGE_SIMPLE.id);
+		});
+
+		it("returns 'No users have reacted' when reaction exists but has zero users", async () => {
+			const channel = await client.channels.fetch(CHANNEL_GENERAL.id);
+			const msg = await channel.messages.fetch(MESSAGE_SIMPLE.id);
+			msg.reactions.resolve = () => ({
+				users: { fetch: async () => createCollection([]) },
+			});
+
+			const result = await callTool("get_reactions", {
+				channelId: CHANNEL_GENERAL.id,
+				messageId: MESSAGE_SIMPLE.id,
+				emoji: "👍",
+			});
+			expect(result).toContain("No users have reacted with 👍");
+		});
+
+		it("throws UserError for unknown messageId", async () => {
+			const channel = await client.channels.fetch(CHANNEL_GENERAL.id);
+			channel.messages.fetch = async () => {
+				throw new Error("Unknown Message");
+			};
+
+			try {
+				await callTool("get_reactions", {
+					channelId: CHANNEL_GENERAL.id,
+					messageId: "0000000000000000000",
+					emoji: "👍",
+				});
+				expect.unreachable("Should have thrown");
+			} catch (e) {
+				expect(e).toBeInstanceOf(UserError);
+			}
+		});
+
+		it("returns not-a-text-channel for voice channelId", async () => {
+			const result = await callTool("get_reactions", {
+				channelId: CHANNEL_VOICE.id,
+				messageId: MESSAGE_SIMPLE.id,
+				emoji: "👍",
+			});
+			expect(result).toContain("not a text channel");
+		});
+	});
+
+	describe("clear_reactions", () => {
+		it("clears all reactions and confirms with message ID", async () => {
+			const channel = await client.channels.fetch(CHANNEL_GENERAL.id);
+			const msg = await channel.messages.fetch(MESSAGE_SIMPLE.id);
+			const removeAllSpy = mock(() => Promise.resolve());
+			msg.reactions.removeAll = removeAllSpy;
+
+			const result = await callTool("clear_reactions", {
+				channelId: CHANNEL_GENERAL.id,
+				messageId: MESSAGE_SIMPLE.id,
+			});
+			expect(result).toContain("✅");
+			expect(result).toContain("All reactions cleared");
+			expect(result).toContain(MESSAGE_SIMPLE.id);
+			expect(removeAllSpy).toHaveBeenCalledTimes(1);
+		});
+
+		it("returns not-a-text-channel for voice channelId", async () => {
+			const result = await callTool("clear_reactions", {
+				channelId: CHANNEL_VOICE.id,
+				messageId: MESSAGE_SIMPLE.id,
+			});
+			expect(result).toContain("not a text channel");
+		});
+
+		it("throws UserError for unknown messageId", async () => {
+			const channel = await client.channels.fetch(CHANNEL_GENERAL.id);
+			channel.messages.fetch = async () => {
+				throw new Error("Unknown Message");
+			};
+
+			try {
+				await callTool("clear_reactions", {
+					channelId: CHANNEL_GENERAL.id,
+					messageId: "0000000000000000000",
+				});
+				expect.unreachable("Should have thrown");
+			} catch (e) {
+				expect(e).toBeInstanceOf(UserError);
+			}
 		});
 	});
 });
