@@ -373,6 +373,7 @@ function createMockGuild(): any {
 	const channelEntries = ALL_CHANNELS.map(
 		(ch) => [ch.id, createMockChannel(ch)] as [string, ReturnType<typeof createMockChannel>],
 	);
+	const channelsCache = createCollection(channelEntries);
 
 	const roleEntries = ALL_ROLES.map(
 		(r) => [r.id, createMockRole(r)] as [string, ReturnType<typeof createMockRole>],
@@ -386,7 +387,8 @@ function createMockGuild(): any {
 	const guild = {
 		...GUILD_FIXTURE,
 		channels: {
-			cache: createCollection(channelEntries),
+			cache: channelsCache,
+			fetch: async (id: string) => channelsCache.get(id) ?? null,
 			create: async (opts: { name: string; type: number; parent?: string; topic?: string }) => {
 				const newChannel = {
 					id: `new-channel-${Date.now()}`,

@@ -40,8 +40,8 @@ export function registerInviteTools(
 		}),
 		execute: async (args) => {
 			return withDiscordErrorHandling(async () => {
-				await resolveGuild(client, args.guildId, defaultGuildId);
-				const channel = await client.channels.fetch(args.channelId);
+				const guild = await resolveGuild(client, args.guildId, defaultGuildId);
+				const channel = await guild.channels.fetch(args.channelId);
 				if (!channel || !("createInvite" in channel)) {
 					throw new UserError(`Channel ${args.channelId} does not support invites.`);
 				}
@@ -103,9 +103,6 @@ export function registerInviteTools(
 			return withDiscordErrorHandling(async () => {
 				const guild = await resolveGuild(client, args.guildId, defaultGuildId);
 				const invite = await guild.invites.fetch(args.code);
-				if (!invite) {
-					throw new UserError(`Invite "${args.code}" not found.`);
-				}
 				await invite.delete();
 				return `✅ Revoked invite ${args.code}`;
 			});

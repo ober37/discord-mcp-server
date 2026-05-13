@@ -31,7 +31,7 @@
 | 👤 **Members**     | `get_member`, `list_members`, `edit_member`, `get_member_presence`                                                                                     |
 | 📨 **Invites**     | `create_invite`, `list_invites`, `delete_invite`                                                                                                       |
 
-**43 tools** covering the most common Discord operations. Forum posts are supported via `create_thread`.
+**44 tools** covering the most common Discord operations. Forum posts are supported via `create_thread`.
 
 > ✦ `get_member_presence` requires the **Presence Intent** to be enabled in the Discord Developer Portal (see setup steps below). Presence is Gateway-only and cannot be fetched via REST — the tool returns live status after the bot observes the first `presenceUpdate` event for a member.
 

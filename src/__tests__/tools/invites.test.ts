@@ -57,7 +57,8 @@ describe("invite tools", () => {
 		});
 
 		it("calls channel.createInvite with provided options", async () => {
-			const channel = await client.channels.fetch(CHANNEL_GENERAL.id);
+			const guild = client.guilds.cache.get(GUILD_FIXTURE.id);
+			const channel = guild.channels.cache.get(CHANNEL_GENERAL.id);
 			const createInviteSpy = mock(channel.createInvite);
 			channel.createInvite = createInviteSpy;
 

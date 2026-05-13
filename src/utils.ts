@@ -61,6 +61,7 @@ const DISCORD_ERROR_MAP: Record<number, string> = {
 	50034: "You can only bulk delete messages that are under 14 days old.",
 	50035: "Invalid form body.",
 	30005: "Maximum number of roles reached for the server.",
+	10006: "Unknown invite. The invite may have expired or already been revoked.",
 };
 
 /**
