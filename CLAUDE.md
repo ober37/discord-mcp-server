@@ -148,6 +148,14 @@ member.roles.cache.filter((r) => r.name !== "@everyone")
 
 Failing to do this pollutes every role list output.
 
+### `pin_message` triggers a Discord system notification message
+
+When `pin_message` is called, Discord automatically posts a **system message** in the channel ("Bot pinned a message to this channel"). This is a separate message with its own ID, no text content, and message type 6. It persists in channel history even after the original message is unpinned or deleted — the bot did not post it and cannot prevent it.
+
+**Impact on smoke tests:** After calling `pin_message`, always call `read_messages` to capture the system notification's ID, then delete it explicitly during cleanup. The system message appears immediately after the pinned message in the channel history and shows as `(no text content)` in `read_messages` output.
+
+**Impact on `get_pinned_messages`:** The system notification is not a pinned message — it will not appear in `fetchPinned()` results. No code change needed.
+
 ### `reactions.resolve()` vs `reactions.cache.get()` — use resolve for user lookups
 
 Two different APIs exist for looking up a reaction on a message:
