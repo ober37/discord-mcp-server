@@ -194,4 +194,145 @@ export function registerMessageTools(
 			});
 		},
 	});
+
+	server.addTool({
+		name: "bulk_delete_messages",
+		description:
+			"Delete 2–100 messages at once from a channel. Only messages under 14 days old can be bulk deleted. Requires Manage Messages permission.",
+		parameters: z.object({
+			channelId: z.string().describe("ID of the channel to delete messages from."),
+			messageIds: z
+				.array(z.string())
+				.min(2)
+				.max(100)
+				.describe("Array of 2–100 message IDs to delete."),
+		}),
+		execute: async (args) => {
+			return withDiscordErrorHandling(async () => {
+				const channel = await client.channels.fetch(args.channelId);
+				if (!channel?.isTextBased() || !("messages" in channel)) {
+					return `Channel ${args.channelId} is not a text channel.`;
+				}
+				const deleted = await (channel as TextChannel).bulkDelete(args.messageIds);
+				return `✅ Bulk deleted ${deleted.size} messages from the channel.`;
+			});
+		},
+	});
+
+	server.addTool({
+		name: "pin_message",
+		description: "Pin a message in a channel. Requires Manage Messages permission.",
+		parameters: z.object({
+			channelId: z.string().describe("ID of the channel containing the message."),
+			messageId: z.string().describe("ID of the message to pin."),
+		}),
+		execute: async (args) => {
+			return withDiscordErrorHandling(async () => {
+				const channel = await client.channels.fetch(args.channelId);
+				if (!channel?.isTextBased() || !("messages" in channel)) {
+					return `Channel ${args.channelId} is not a text channel.`;
+				}
+				const message = await (channel as TextChannel).messages.fetch(args.messageId);
+				await message.pin();
+				return `✅ Message ${args.messageId} pinned in #${(channel as TextChannel).name}.`;
+			});
+		},
+	});
+
+	server.addTool({
+		name: "unpin_message",
+		description: "Unpin a message from a channel. Requires Manage Messages permission.",
+		parameters: z.object({
+			channelId: z.string().describe("ID of the channel containing the message."),
+			messageId: z.string().describe("ID of the message to unpin."),
+		}),
+		execute: async (args) => {
+			return withDiscordErrorHandling(async () => {
+				const channel = await client.channels.fetch(args.channelId);
+				if (!channel?.isTextBased() || !("messages" in channel)) {
+					return `Channel ${args.channelId} is not a text channel.`;
+				}
+				const message = await (channel as TextChannel).messages.fetch(args.messageId);
+				await message.unpin();
+				return `✅ Message ${args.messageId} unpinned from #${(channel as TextChannel).name}.`;
+			});
+		},
+	});
+
+	server.addTool({
+		name: "get_pinned_messages",
+		description: "Fetch all pinned messages in a channel.",
+		parameters: z.object({
+			channelId: z.string().describe("ID of the channel to get pinned messages from."),
+		}),
+		execute: async (args) => {
+			return withDiscordErrorHandling(async () => {
+				const channel = await client.channels.fetch(args.channelId);
+				if (!channel?.isTextBased() || !("messages" in channel)) {
+					return `Channel ${args.channelId} is not a text channel.`;
+				}
+				const pinned = await (channel as TextChannel).messages.fetchPinned();
+				if (pinned.size === 0) {
+					return "No pinned messages in this channel.";
+				}
+				const formatted = pinned
+					.sort((a, b) => a.createdTimestamp - b.createdTimestamp)
+					.map(formatMessage);
+				return `**Pinned messages in #${(channel as TextChannel).name} (${pinned.size}):**\n\n${formatted.join("\n")}`;
+			});
+		},
+	});
+
+	server.addTool({
+		name: "get_reactions",
+		description: "List users who reacted with a specific emoji on a message.",
+		parameters: z.object({
+			channelId: z.string().describe("ID of the channel containing the message."),
+			messageId: z.string().describe("ID of the message to get reactions for."),
+			emoji: z
+				.string()
+				.describe(
+					"Emoji to get reactions for (e.g., '👍', '🎉', or custom emoji in 'name:id' format).",
+				),
+		}),
+		execute: async (args) => {
+			return withDiscordErrorHandling(async () => {
+				const channel = await client.channels.fetch(args.channelId);
+				if (!channel?.isTextBased() || !("messages" in channel)) {
+					return `Channel ${args.channelId} is not a text channel.`;
+				}
+				const message = await (channel as TextChannel).messages.fetch(args.messageId);
+				const reaction = message.reactions.resolve(args.emoji);
+				if (!reaction) {
+					return `No reactions found for ${args.emoji} on message ${args.messageId}.`;
+				}
+				const users = await reaction.users.fetch();
+				if (users.size === 0) {
+					return `No users have reacted with ${args.emoji}.`;
+				}
+				const userList = users.map((u: { tag: string; id: string }) => `${u.tag} (ID: ${u.id})`);
+				return `**Users who reacted with ${args.emoji} (${users.size}):**\n${userList.join("\n")}`;
+			});
+		},
+	});
+
+	server.addTool({
+		name: "clear_reactions",
+		description: "Remove all reactions from a message. Requires Manage Messages permission.",
+		parameters: z.object({
+			channelId: z.string().describe("ID of the channel containing the message."),
+			messageId: z.string().describe("ID of the message to clear reactions from."),
+		}),
+		execute: async (args) => {
+			return withDiscordErrorHandling(async () => {
+				const channel = await client.channels.fetch(args.channelId);
+				if (!channel?.isTextBased() || !("messages" in channel)) {
+					return `Channel ${args.channelId} is not a text channel.`;
+				}
+				const message = await (channel as TextChannel).messages.fetch(args.messageId);
+				await message.reactions.removeAll();
+				return `✅ All reactions cleared from message ${args.messageId}.`;
+			});
+		},
+	});
 }

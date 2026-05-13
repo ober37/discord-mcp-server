@@ -16,6 +16,7 @@ import {
 	MESSAGE_SIMPLE,
 	MESSAGE_WITH_ATTACHMENTS,
 	OWNER_FIXTURE,
+	REGULAR_USER,
 	THREAD_ACTIVE,
 	THREAD_ARCHIVED,
 	WEBHOOK_GITHUB,
@@ -133,7 +134,10 @@ function createMockChannel(fixture: (typeof ALL_CHANNELS)[number]): any {
 							}
 							return messages;
 						},
+						fetchPinned: async () =>
+							createCollection([[MESSAGE_FROM_BOT.id, createMockMessage(MESSAGE_FROM_BOT)]]),
 					},
+					bulkDelete: async (ids: string[]) => createCollection(ids.map((id) => [id, undefined])),
 					threads: {
 						fetchActive: async () => ({ threads: activeThreads }),
 						fetchArchived: async () => ({ threads: archivedThreads }),
@@ -202,6 +206,8 @@ function createMockMessage(
 		edit: async (content: string) => ({ ...fixture, content }),
 		delete: async () => {},
 		react: async () => {},
+		pin: async () => {},
+		unpin: async () => {},
 		startThread: async (opts: { name: string }) => ({
 			id: `new-thread-from-msg-${Date.now()}`,
 			name: opts.name,
@@ -218,6 +224,21 @@ function createMockMessage(
 					},
 				],
 			]),
+			resolve: (emoji: string) => {
+				if (emoji === "👍") {
+					return {
+						users: {
+							fetch: async () =>
+								createCollection([
+									[REGULAR_USER.id, { id: REGULAR_USER.id, tag: REGULAR_USER.tag }],
+								]),
+							remove: async () => {},
+						},
+					};
+				}
+				return null;
+			},
+			removeAll: async () => {},
 		},
 	};
 }
