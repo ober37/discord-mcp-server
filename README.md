@@ -28,8 +28,11 @@
 | 🔗 **Webhooks**    | `list_webhooks`, `create_webhook`, `delete_webhook`, `send_webhook_message`, `edit_webhook`                                                            |
 | 🎭 **Roles**       | `list_roles`, `create_role`, `edit_role`, `delete_role`, `assign_role`, `remove_role`                                                                  |
 | 🧵 **Threads**     | `list_threads`, `create_thread`, `reply_to_thread`, `get_thread`                                                                                       |
+| 👤 **Members**     | `get_member`, `list_members`, `edit_member`, `get_member_presence`                                                                                     |
 
-**31 tools** covering the most common Discord operations. Forum posts are supported via `create_thread`.
+**34 tools** covering the most common Discord operations. Forum posts are supported via `create_thread`.
+
+> ✦ `get_member_presence` requires the **Presence Intent** to be enabled in the Discord Developer Portal (see setup steps below). Presence is Gateway-only and cannot be fetched via REST — the tool returns live status after the bot observes the first `presenceUpdate` event for a member.
 
 > ✦ `send_message`, `send_webhook_message`, and `reply_to_thread` support **rich embeds** and **native file attachments**. Embeds carry images, titles, descriptions, and fields inline. Attachments are fetched server-side from URLs and uploaded to Discord's CDN. File size limits are tier-aware: 8 MB (Tier 0/1), 50 MB (Tier 2), 100 MB (Tier 3). At least one of `message`, `embeds`, or `attachmentUrls` must be provided.
 
@@ -46,6 +49,7 @@
 4. Under **Privileged Gateway Intents**, enable:
    - ✅ Message Content Intent
    - ✅ Server Members Intent
+   - ✅ Presence Intent _(required for `get_member_presence`)_
 5. Go to **OAuth2** → **URL Generator**
    - Scopes: `bot`
    - Bot Permissions: `Administrator` (or cherry-pick permissions)
@@ -184,7 +188,8 @@ src/
     ├── messages.ts     # Message send/read/edit/delete + reactions
     ├── webhooks.ts     # Webhook management
     ├── roles.ts        # Role CRUD + assignment
-    └── threads.ts      # Thread & forum operations
+    ├── threads.ts      # Thread & forum operations
+    └── members.ts      # Member profile, listing, editing, and presence
 ```
 
 ## Contributing
