@@ -54,6 +54,10 @@ src/
       *.test.ts         # one file per tool module
 ```
 
+### Presence cache
+
+`get_member_presence` is the only stateful tool. A `Map<userId, PresenceData>` is created in `main()` and populated by `presenceUpdate` Gateway events. It is cleared on bot restart — the tool returns "offline (not yet cached)" until the first `presenceUpdate` fires for a given member. The cache is **not** available in `createSandboxServer()` (null client; no event listeners attached there).
+
 **Adding a new tool module** requires changes in four places:
 1. `src/tools/<name>.ts` — implement `registerXxxTools(server, client, defaultGuildId)`
 2. `src/index.ts` — call `registerXxxTools()` in both `main()` and `createSandboxServer()`
@@ -282,6 +286,6 @@ Current intents in `src/discord.ts`:
 | `GuildBans` | 🔜 needed | ban/unban tools (WI2) |
 | `GuildInvites` | 🔜 needed | invite tools (future) |
 | `GuildScheduledEvents` | 🔜 needed | events tools (future) |
-| `GuildPresence` | ⚠️ privileged | presence tools (WI1a — requires Developer Portal toggle + Gateway cache) |
+| `GuildPresence` | ✅ enabled | `get_member_presence` (privileged — requires Developer Portal toggle; data cached from `presenceUpdate` Gateway events) |
 
 When adding a new intent, update both `src/discord.ts` and this table.

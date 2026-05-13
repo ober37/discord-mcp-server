@@ -4,7 +4,7 @@ import { FastMCP } from "fastmcp";
 import { loadConfig } from "./config.ts";
 import { createDiscordClient } from "./discord.ts";
 import { registerChannelTools } from "./tools/channels.ts";
-import { registerMemberTools } from "./tools/members.ts";
+import { type PresenceData, registerMemberTools } from "./tools/members.ts";
 import { registerMessageTools } from "./tools/messages.ts";
 import { registerRoleTools } from "./tools/roles.ts";
 import { registerServerInfoTools } from "./tools/server-info.ts";
@@ -22,7 +22,9 @@ if (typeof process.emitWarning === "function") {
 	// biome-ignore lint/suspicious/noExplicitAny: overriding a Node.js built-in with complex overloads
 	(process as any).emitWarning = (...args: any[]) => {
 		try {
-			_orig(...args);
+			// process.emitWarning has complex overloads; args matches at runtime
+			// @ts-expect-error -- TS cannot verify any[] against emitWarning overloads; safe at runtime
+			_orig.apply(process, args);
 		} catch {
 			const msg = args[0];
 			console.error(
@@ -41,6 +43,18 @@ async function main() {
 	// Initialize Discord client
 	const discordClient = await createDiscordClient(config.discordToken);
 
+	// Presence cache — populated by live Gateway presenceUpdate events.
+	// Stateful: cleared on bot restart. Not available in createSandboxServer().
+	const presenceCache = new Map<string, PresenceData>();
+	discordClient.on("presenceUpdate", (_old, newPresence) => {
+		if (!newPresence?.userId) return;
+		presenceCache.set(newPresence.userId, {
+			status: newPresence.status ?? "offline",
+			activity: newPresence.activities?.[0]?.name ?? null,
+			lastSeen: new Date().toISOString(),
+		});
+	});
+
 	// Create FastMCP server
 	const server = new FastMCP({
 		name: "discord-mcp-server",
@@ -55,7 +69,7 @@ async function main() {
 	registerWebhookTools(server, discordClient, guildId);
 	registerRoleTools(server, discordClient, guildId);
 	registerThreadTools(server, discordClient, guildId);
-	registerMemberTools(server, discordClient, guildId);
+	registerMemberTools(server, discordClient, guildId, presenceCache);
 
 	// Start the server with the configured transport
 	if (config.transport === "stdio") {

@@ -193,8 +193,7 @@ describe("role tools", () => {
 			});
 
 			expect(addSpy).toHaveBeenCalledTimes(1);
-			const passedRole = addSpy.mock.calls[0][0];
-			expect(passedRole.id).toBe(ROLE_MEMBER.id);
+			expect(addSpy).toHaveBeenCalledWith(expect.objectContaining({ id: ROLE_MEMBER.id }));
 		});
 
 		it("throws UserError for unknown roleId", async () => {
@@ -237,8 +236,7 @@ describe("role tools", () => {
 			});
 
 			expect(removeSpy).toHaveBeenCalledTimes(1);
-			const passedRole = removeSpy.mock.calls[0][0];
-			expect(passedRole.id).toBe(ROLE_MEMBER.id);
+			expect(removeSpy).toHaveBeenCalledWith(expect.objectContaining({ id: ROLE_MEMBER.id }));
 		});
 
 		it("throws UserError for unknown roleId", async () => {
