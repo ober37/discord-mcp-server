@@ -9,7 +9,7 @@ Project-specific guidance for Claude Code sessions. Read this before touching an
 A Model Context Protocol (MCP) server exposing Discord operations as tools for AI clients. Built with **Bun**, **FastMCP**, and **discord.js v14**.
 
 - **Upstream repo:** `ngoctranfire/discord-mcp-server`
-- **Working fork:** `ober37/discord-mcp-server`
+- **Working fork:** your GitHub fork of the upstream repo
 - Feature branches live on the fork; PRs target upstream `main`.
 
 ---
@@ -207,7 +207,7 @@ Unit tests mock the Discord API — they won't catch Bun runtime issues. Any too
 ## Branching & PR workflow
 
 ```
-origin   → ober37/discord-mcp-server       (your fork — feature branches live here)
+origin   → <your-fork>/discord-mcp-server   (your fork — feature branches live here)
 upstream → ngoctranfire/discord-mcp-server  (source repo — PRs target this)
 ```
 
@@ -256,14 +256,14 @@ For any tool that performs a **write operation** (POST / PATCH / DELETE), also d
 
 When the user does ask, open the PR from the fork's feature branch targeting `upstream/main`:
 
-> ⚠️ **`--head` is required** when opening a PR to a repo other than the one the local branch tracks. Without it, `gh pr create` fails with "you must first push the current branch to a remote". Always pass `--head ober37:<branch>` explicitly.
+> ⚠️ **`--head` is required** when opening a PR to a repo other than the one the local branch tracks. Without it, `gh pr create` fails with "you must first push the current branch to a remote". Always pass `--head <your-github-username>:<branch>` explicitly.
 
 **Fork-to-fork PR** (feature branch → fork `main`):
 ```bash
 gh pr create \
-  --repo ober37/discord-mcp-server \
+  --repo <your-github-username>/discord-mcp-server \
   --base main \
-  --head ober37:feat/<branch> \
+  --head <your-github-username>:feat/<branch> \
   --title "feat: <short description>" \
   --body "..."
 ```
@@ -273,7 +273,7 @@ gh pr create \
 gh pr create \
   --repo ngoctranfire/discord-mcp-server \
   --base main \
-  --head ober37:feat/<branch> \
+  --head <your-github-username>:feat/<branch> \
   --title "feat: <short description>" \
   --body "$(cat <<'EOF'
 ## Summary
