@@ -36,7 +36,8 @@ src/
   discord.ts        # Discord.js client factory + intent config
   config.ts         # env var loading/validation
   utils.ts          # resolveGuild(), withDiscordErrorHandling(), formatMessage()
-  schemas.ts        # shared Zod schemas
+  schemas.ts        # shared Zod schemas (embed + attachment parameters)
+  attachments.ts    # file fetching with tier-aware size limits
   tools/
     channels.ts     # registerChannelTools()
     members.ts      # registerMemberTools()  ← added in feat/member-management
@@ -58,11 +59,12 @@ src/
 
 `get_member_presence` is the only stateful tool. A `Map<userId, PresenceData>` is created in `main()` and populated by `presenceUpdate` Gateway events. It is cleared on bot restart — the tool returns "offline (not yet cached)" until the first `presenceUpdate` fires for a given member. The cache is **not** available in `createSandboxServer()` (null client; no event listeners attached there).
 
-**Adding a new tool module** requires changes in four places:
+**Adding a new tool module** requires changes in five places:
 1. `src/tools/<name>.ts` — implement `registerXxxTools(server, client, defaultGuildId)`
 2. `src/index.ts` — call `registerXxxTools()` in both `main()` and `createSandboxServer()`
 3. `src/__tests__/tools/<name>.test.ts` — new test file
 4. `src/__tests__/helpers/discord-mock.ts` / `fixtures.ts` — extend mock as needed
+5. `README.md` — add new tools to the features table; update the architecture tree if new `src/` files were added
 
 ---
 
@@ -223,6 +225,13 @@ All three must be clean before any commit:
 | Types | `bun run typecheck` | 0 errors |
 
 For any tool that performs a **write operation** (POST / PATCH / DELETE), also do a live smoke test against a real Discord guild before committing. Unit tests mock the API and will not catch Bun runtime issues.
+
+**Also update `README.md` when any of the following change:**
+
+- A new tool is added → update the features table (tool name + description)
+- A tool gains a new capability (e.g. embed or attachment support) → update the `> ✦` callout below the features table
+- A new source file is added to `src/` → update the architecture tree
+- The server's overall feature set changes → update the "What is this?" description line
 
 ---
 
