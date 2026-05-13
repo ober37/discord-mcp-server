@@ -300,3 +300,29 @@ export const BOT_MEMBER_FIXTURE = {
 };
 
 export const ALL_MEMBER_FIXTURES = [MEMBER_ONE_FIXTURE, MEMBER_TWO_FIXTURE, BOT_MEMBER_FIXTURE];
+
+// ─── Invites ─────────────────────────────────────────────────────────────────
+
+export const INVITE_GENERAL = {
+	code: "abc123",
+	maxAge: 86400,
+	maxUses: 10,
+	uses: 3,
+	temporary: false,
+	channelId: CHANNEL_GENERAL.id,
+	channelName: CHANNEL_GENERAL.name,
+	inviterTag: REGULAR_USER.tag,
+} as const;
+
+export const INVITE_NO_EXPIRY = {
+	code: "xyz789",
+	maxAge: 0,
+	maxUses: 0,
+	uses: 7,
+	temporary: false,
+	channelId: CHANNEL_DEV_CHAT.id,
+	channelName: CHANNEL_DEV_CHAT.name,
+	inviterTag: BOT_USER.tag,
+} as const;
+
+export const ALL_INVITES = [INVITE_GENERAL, INVITE_NO_EXPIRY] as const;
