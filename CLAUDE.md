@@ -148,6 +148,19 @@ member.roles.cache.filter((r) => r.name !== "@everyone")
 
 Failing to do this pollutes every role list output.
 
+### `reactions.resolve()` vs `reactions.cache.get()` — use resolve for user lookups
+
+Two different APIs exist for looking up a reaction on a message:
+
+- `message.reactions.cache.get(emoji)` — direct cache lookup, returns the cached `MessageReaction` or `undefined`. Used by `remove_reaction` to find the bot's own reaction entry.
+- `message.reactions.resolve(emoji)` — the proper discord.js manager API for resolving a reaction by identifier. **Use this** in any tool that needs to inspect or fetch a reaction's users (`reaction.users.fetch()`).
+
+Do not copy `cache.get` from `remove_reaction` when building new reaction tools — `resolve` is correct.
+
+### `[MCP unexpected error]` stderr in tests is expected for error-path cases
+
+`withDiscordErrorHandling` calls `console.error("[MCP unexpected error]", error)` before rethrowing unknown errors as `UserError`. Tests that exercise the not-found / error path (e.g. "throws UserError for unknown messageId") will always print this to stderr during `bun test`. This is **intentional** and does not indicate a test failure — the test output line count and pass/fail count are the only signal that matters.
+
 ### Presence (online status) is NOT REST-accessible
 
 Member online/offline/idle/dnd status requires `GatewayIntentBits.GuildPresence` — a **privileged intent** that must be enabled in the Discord Developer Portal — plus a persistent in-memory cache built from live `presenceUpdate` Gateway events. It cannot be added to `list_members` or any other REST tool as a simple parameter. Do not attempt to surface presence status via REST; it will always return nothing useful.
@@ -210,6 +223,8 @@ git push origin main
 git checkout -b feat/<short-name>
 ```
 
+> ⚠️ **After merging a PR into the fork** (not upstream), `git fetch upstream && git merge upstream/main` does nothing — the change came from `origin`, not `upstream`. In that case run `git pull origin main` first to bring the merge commit down locally, then `git push origin main`.
+
 **Branch naming:** `feat/<short-name>` (e.g. `feat/member-moderation`, `feat/invites`)
 
 ---
@@ -241,10 +256,24 @@ For any tool that performs a **write operation** (POST / PATCH / DELETE), also d
 
 When the user does ask, open the PR from the fork's feature branch targeting `upstream/main`:
 
+> ⚠️ **`--head` is required** when opening a PR to a repo other than the one the local branch tracks. Without it, `gh pr create` fails with "you must first push the current branch to a remote". Always pass `--head ober37:<branch>` explicitly.
+
+**Fork-to-fork PR** (feature branch → fork `main`):
+```bash
+gh pr create \
+  --repo ober37/discord-mcp-server \
+  --base main \
+  --head ober37:feat/<branch> \
+  --title "feat: <short description>" \
+  --body "..."
+```
+
+**Fork-to-upstream PR** (fork branch → upstream `main`):
 ```bash
 gh pr create \
   --repo ngoctranfire/discord-mcp-server \
   --base main \
+  --head ober37:feat/<branch> \
   --title "feat: <short description>" \
   --body "$(cat <<'EOF'
 ## Summary
