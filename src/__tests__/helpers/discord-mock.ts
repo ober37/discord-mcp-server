@@ -8,6 +8,7 @@
 
 import {
 	ALL_CHANNELS,
+	ALL_INVITES,
 	ALL_MEMBER_FIXTURES,
 	ALL_ROLES,
 	BOT_USER,
@@ -152,6 +153,17 @@ function createMockChannel(fixture: (typeof ALL_CHANNELS)[number]): any {
 						id: `new-webhook-${Date.now()}`,
 						name: opts.name,
 						url: `https://discord.com/api/webhooks/new-webhook-${Date.now()}/token`,
+					}),
+					createInvite: async (opts: {
+						maxAge?: number;
+						maxUses?: number;
+						temporary?: boolean;
+					}) => ({
+						code: `test-invite-${Date.now()}`,
+						maxAge: opts.maxAge ?? 86400,
+						maxUses: opts.maxUses ?? 0,
+						uses: 0,
+						temporary: opts.temporary ?? false,
 					}),
 					delete: async () => {},
 					setParent: async () => {},
@@ -416,6 +428,63 @@ function createMockGuild(): any {
 				return createCollection(entries);
 			},
 			editMe: async (_opts: Record<string, unknown>) => {},
+		},
+		invites: {
+			fetch: async (options?: string | { channelId?: string }) => {
+				const inviteEntries = ALL_INVITES.map(
+					(inv) =>
+						[
+							inv.code,
+							{
+								code: inv.code,
+								maxAge: inv.maxAge,
+								maxUses: inv.maxUses,
+								uses: inv.uses,
+								temporary: inv.temporary,
+								channel: { name: inv.channelName },
+								inviter: { tag: inv.inviterTag },
+								delete: async () => {},
+							},
+						] as [string, unknown],
+				);
+
+				if (typeof options === "string") {
+					const code = options;
+					const found = ALL_INVITES.find((inv) => inv.code === code);
+					if (!found) throw new Error(`Unknown Invite: ${code}`);
+					return {
+						code: found.code,
+						maxAge: found.maxAge,
+						maxUses: found.maxUses,
+						uses: found.uses,
+						temporary: found.temporary,
+						channel: { name: found.channelName },
+						inviter: { tag: found.inviterTag },
+						delete: async () => {},
+					};
+				}
+
+				if (options && "channelId" in options && options.channelId) {
+					const filtered = ALL_INVITES.filter((inv) => inv.channelId === options.channelId);
+					return createCollection(
+						filtered.map((inv) => [
+							inv.code,
+							{
+								code: inv.code,
+								maxAge: inv.maxAge,
+								maxUses: inv.maxUses,
+								uses: inv.uses,
+								temporary: inv.temporary,
+								channel: { name: inv.channelName },
+								inviter: { tag: inv.inviterTag },
+								delete: async () => {},
+							},
+						]),
+					);
+				}
+
+				return createCollection(inviteEntries);
+			},
 		},
 		fetch: async () => guild,
 		fetchOwner: async () => ({

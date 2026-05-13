@@ -29,8 +29,9 @@
 | 🎭 **Roles**       | `list_roles`, `create_role`, `edit_role`, `delete_role`, `assign_role`, `remove_role`                                                                  |
 | 🧵 **Threads**     | `list_threads`, `create_thread`, `reply_to_thread`, `get_thread`                                                                                       |
 | 👤 **Members**     | `get_member`, `list_members`, `edit_member`, `get_member_presence`                                                                                     |
+| 📨 **Invites**     | `create_invite`, `list_invites`, `delete_invite`                                                                                                       |
 
-**40 tools** covering the most common Discord operations. Forum posts are supported via `create_thread`.
+**43 tools** covering the most common Discord operations. Forum posts are supported via `create_thread`.
 
 > ✦ `get_member_presence` requires the **Presence Intent** to be enabled in the Discord Developer Portal (see setup steps below). Presence is Gateway-only and cannot be fetched via REST — the tool returns live status after the bot observes the first `presenceUpdate` event for a member.
 
@@ -189,7 +190,8 @@ src/
     ├── webhooks.ts     # Webhook management
     ├── roles.ts        # Role CRUD + assignment
     ├── threads.ts      # Thread & forum operations
-    └── members.ts      # Member profile, listing, editing, and presence
+    ├── members.ts      # Member profile, listing, editing, and presence
+    └── invites.ts      # Invite CRUD (create, list, delete)
 ```
 
 ## Contributing

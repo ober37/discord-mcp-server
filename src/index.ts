@@ -4,6 +4,7 @@ import { FastMCP } from "fastmcp";
 import { loadConfig } from "./config.ts";
 import { createDiscordClient } from "./discord.ts";
 import { registerChannelTools } from "./tools/channels.ts";
+import { registerInviteTools } from "./tools/invites.ts";
 import { type PresenceData, registerMemberTools } from "./tools/members.ts";
 import { registerMessageTools } from "./tools/messages.ts";
 import { registerRoleTools } from "./tools/roles.ts";
@@ -70,6 +71,7 @@ async function main() {
 	registerRoleTools(server, discordClient, guildId);
 	registerThreadTools(server, discordClient, guildId);
 	registerMemberTools(server, discordClient, guildId, presenceCache);
+	registerInviteTools(server, discordClient, guildId);
 
 	// Start the server with the configured transport
 	if (config.transport === "stdio") {
@@ -109,6 +111,7 @@ export function createSandboxServer() {
 	registerRoleTools(server, mockClient, undefined);
 	registerThreadTools(server, mockClient, undefined);
 	registerMemberTools(server, mockClient, undefined);
+	registerInviteTools(server, mockClient, undefined);
 
 	return server;
 }

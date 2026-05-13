@@ -13,6 +13,7 @@ export async function createDiscordClient(token: string): Promise<Client> {
 			GatewayIntentBits.MessageContent,
 			GatewayIntentBits.GuildWebhooks,
 			GatewayIntentBits.GuildPresences,
+			GatewayIntentBits.GuildInvites,
 		],
 	});
 
