@@ -21,6 +21,7 @@ import {
 	REGULAR_USER,
 	THREAD_ACTIVE,
 	THREAD_ARCHIVED,
+	THREAD_PRIVATE,
 	WEBHOOK_GITHUB,
 	WEBHOOK_MONITORING,
 } from "./fixtures";
@@ -258,14 +259,17 @@ function createMockMessage(
 
 // ─── Thread Mock ────────────────────────────────────────────────────────────
 
-// biome-ignore lint/suspicious/noExplicitAny: mock factory
-function createMockThread(fixture: typeof THREAD_ACTIVE | typeof THREAD_ARCHIVED): any {
+function createMockThread(
+	fixture: typeof THREAD_ACTIVE | typeof THREAD_ARCHIVED | typeof THREAD_PRIVATE,
+	// biome-ignore lint/suspicious/noExplicitAny: mock factory
+): any {
 	const threadMessages = createCollection([[MESSAGE_SIMPLE.id, createMockMessage(MESSAGE_SIMPLE)]]);
 
 	return {
 		id: fixture.id,
 		name: fixture.name,
 		archived: fixture.archived,
+		locked: fixture.locked,
 		messageCount: fixture.messageCount,
 		memberCount: fixture.memberCount,
 		parentId: fixture.parentId,
@@ -287,6 +291,11 @@ function createMockThread(fixture: typeof THREAD_ACTIVE | typeof THREAD_ARCHIVED
 		}),
 		messages: {
 			fetch: async () => threadMessages,
+		},
+		edit: async (_opts: { archived?: boolean; locked?: boolean }) => {},
+		members: {
+			add: async (_userId: string) => {},
+			remove: async (_userId: string) => {},
 		},
 	};
 }
@@ -522,6 +531,7 @@ export function createMockDiscordClient(): any {
 	allChannelEntries.push(
 		[THREAD_ACTIVE.id, createMockThread(THREAD_ACTIVE)],
 		[THREAD_ARCHIVED.id, createMockThread(THREAD_ARCHIVED)],
+		[THREAD_PRIVATE.id, createMockThread(THREAD_PRIVATE)],
 	);
 
 	const channelMap = new Map(allChannelEntries);

@@ -241,6 +241,102 @@ export function registerThreadTools(
 			});
 		},
 	});
+
+	server.addTool({
+		name: "archive_thread",
+		description: "Archive or unarchive a thread.",
+		parameters: z.object({
+			threadId: z.string().describe("ID of the thread to archive or unarchive."),
+			archived: z
+				.boolean()
+				.default(true)
+				.describe("True to archive, false to unarchive. Default: true."),
+		}),
+		execute: async (args) => {
+			return withDiscordErrorHandling(async () => {
+				const thread = await client.channels.fetch(args.threadId);
+				if (!thread?.isThread()) {
+					throw new UserError(`${args.threadId} is not a thread.`);
+				}
+				await (thread as ThreadChannel).edit({ archived: args.archived });
+				const action = args.archived ? "archived" : "unarchived";
+				return `✅ Thread "${thread.name}" has been ${action}.`;
+			});
+		},
+	});
+
+	server.addTool({
+		name: "lock_thread",
+		description:
+			"Lock or unlock a thread. Locking prevents new messages (requires MANAGE_THREADS). Thread must be unarchived before it can be locked.",
+		parameters: z.object({
+			threadId: z.string().describe("ID of the thread to lock or unlock."),
+			locked: z.boolean().default(true).describe("True to lock, false to unlock. Default: true."),
+		}),
+		execute: async (args) => {
+			return withDiscordErrorHandling(async () => {
+				const thread = await client.channels.fetch(args.threadId);
+				if (!thread?.isThread()) {
+					throw new UserError(`${args.threadId} is not a thread.`);
+				}
+				await (thread as ThreadChannel).edit({ locked: args.locked });
+				const action = args.locked ? "locked" : "unlocked";
+				return `✅ Thread "${thread.name}" has been ${action}.`;
+			});
+		},
+	});
+
+	server.addTool({
+		name: "add_thread_member",
+		description:
+			"Add a user to a private thread. Only applies to private threads — public thread membership is implicit.",
+		parameters: z.object({
+			threadId: z.string().describe("ID of the private thread."),
+			userId: z.string().describe("ID of the user to add."),
+		}),
+		execute: async (args) => {
+			return withDiscordErrorHandling(async () => {
+				const thread = await client.channels.fetch(args.threadId);
+				if (!thread?.isThread()) {
+					throw new UserError(`${args.threadId} is not a thread.`);
+				}
+				const threadChannel = thread as ThreadChannel;
+				if (threadChannel.type !== ChannelType.PrivateThread) {
+					throw new UserError(
+						"add_thread_member only applies to private threads. Public thread membership is implicit.",
+					);
+				}
+				await threadChannel.members.add(args.userId);
+				return `✅ Added user ${args.userId} to private thread "${thread.name}".`;
+			});
+		},
+	});
+
+	server.addTool({
+		name: "remove_thread_member",
+		description:
+			"Remove a user from a private thread. Only applies to private threads — public thread membership is implicit.",
+		parameters: z.object({
+			threadId: z.string().describe("ID of the private thread."),
+			userId: z.string().describe("ID of the user to remove."),
+		}),
+		execute: async (args) => {
+			return withDiscordErrorHandling(async () => {
+				const thread = await client.channels.fetch(args.threadId);
+				if (!thread?.isThread()) {
+					throw new UserError(`${args.threadId} is not a thread.`);
+				}
+				const threadChannel = thread as ThreadChannel;
+				if (threadChannel.type !== ChannelType.PrivateThread) {
+					throw new UserError(
+						"remove_thread_member only applies to private threads. Public thread membership is implicit.",
+					);
+				}
+				await threadChannel.members.remove(args.userId);
+				return `✅ Removed user ${args.userId} from private thread "${thread.name}".`;
+			});
+		},
+	});
 }
 
 function formatThreadList(threads: ThreadChannel[]): string {
