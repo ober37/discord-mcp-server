@@ -375,6 +375,8 @@ function createMockMember(fixture: (typeof ALL_MEMBER_FIXTURES)[number]): any {
 		edit: async () => {},
 		kick: async (_reason?: string) => {},
 		timeout: async (_duration: number | null, _reason?: string) => {},
+		kickable: true,
+		moderatable: true,
 	};
 }
 
