@@ -329,7 +329,7 @@ Current intents in `src/discord.ts`:
 | `GuildMembers` | ✅ enabled | member tools |
 | `MessageContent` | ✅ enabled | read_messages |
 | `GuildWebhooks` | ✅ enabled | webhook tools |
-| `GuildBans` | 🔜 needed | ban/unban tools (WI2) |
+| `GuildBans` | ✅ enabled | `kick_member`, `ban_member`, `unban_member`, `list_bans`, `timeout_member` |
 | `GuildInvites` | ✅ enabled | invite tools (`create_invite`, `list_invites`, `delete_invite`) |
 | `GuildScheduledEvents` | 🔜 needed | events tools (future) |
 | `GuildPresence` | ✅ enabled | `get_member_presence` (privileged — requires Developer Portal toggle; data cached from `presenceUpdate` Gateway events) |

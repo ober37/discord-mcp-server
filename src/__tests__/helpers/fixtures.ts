@@ -326,3 +326,19 @@ export const INVITE_NO_EXPIRY = {
 } as const;
 
 export const ALL_INVITES = [INVITE_GENERAL, INVITE_NO_EXPIRY] as const;
+
+// ─── Bans ────────────────────────────────────────────────────────────────────
+
+export const BANNED_USER = {
+	id: "5500000000000000099",
+	tag: "BannedUser#9999",
+	username: "BannedUser",
+	discriminator: "9999",
+	bot: false,
+} as const;
+
+export const BAN_FIXTURE = {
+	userId: BANNED_USER.id,
+	user: BANNED_USER,
+	reason: "Spamming",
+} as const;

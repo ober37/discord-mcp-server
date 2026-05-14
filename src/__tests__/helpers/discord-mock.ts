@@ -11,6 +11,7 @@ import {
 	ALL_INVITES,
 	ALL_MEMBER_FIXTURES,
 	ALL_ROLES,
+	BAN_FIXTURE,
 	BOT_USER,
 	GUILD_FIXTURE,
 	MESSAGE_FROM_BOT,
@@ -363,6 +364,8 @@ function createMockMember(fixture: (typeof ALL_MEMBER_FIXTURES)[number]): any {
 			remove: async () => {},
 		},
 		edit: async () => {},
+		kick: async (_reason?: string) => {},
+		timeout: async (_duration: number | null, _reason?: string) => {},
 	};
 }
 
@@ -487,6 +490,14 @@ function createMockGuild(): any {
 
 				return createCollection(inviteEntries);
 			},
+		},
+		bans: {
+			create: async (_userId: string, _opts?: unknown) => {},
+			remove: async (_userId: string, _reason?: string) => {},
+			fetch: async (_opts?: unknown) =>
+				createCollection([
+					[BAN_FIXTURE.userId, { user: BAN_FIXTURE.user, reason: BAN_FIXTURE.reason }],
+				]),
 		},
 		fetch: async () => guild,
 		fetchOwner: async () => ({
