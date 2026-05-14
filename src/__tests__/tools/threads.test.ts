@@ -8,8 +8,10 @@ import {
 	CHANNEL_VOICE,
 	GUILD_FIXTURE,
 	MESSAGE_SIMPLE,
+	REGULAR_USER,
 	THREAD_ACTIVE,
 	THREAD_ARCHIVED,
+	THREAD_PRIVATE,
 } from "../helpers/fixtures";
 import { createTestServer } from "../helpers/test-server";
 
@@ -239,6 +241,164 @@ describe("thread tools", () => {
 			const result = await callTool("get_thread", { threadId: THREAD_ACTIVE.id });
 			expect(result).toContain("No messages in this thread");
 			expect(result).toContain(`Thread: ${THREAD_ACTIVE.name}`);
+		});
+	});
+
+	describe("archive_thread", () => {
+		it("archives a thread", async () => {
+			const thread = await client.channels.fetch(THREAD_ACTIVE.id);
+			const editSpy = mock(async () => {});
+			thread.edit = editSpy;
+
+			const result = await callTool("archive_thread", { threadId: THREAD_ACTIVE.id });
+			expect(result).toContain("✅");
+			expect(result).toContain("archived");
+			expect(result).toContain(THREAD_ACTIVE.name);
+			expect(editSpy).toHaveBeenCalledWith({ archived: true });
+		});
+
+		it("unarchives a thread", async () => {
+			const thread = await client.channels.fetch(THREAD_ACTIVE.id);
+			const editSpy = mock(async () => {});
+			thread.edit = editSpy;
+
+			const result = await callTool("archive_thread", {
+				threadId: THREAD_ACTIVE.id,
+				archived: false,
+			});
+			expect(result).toContain("✅");
+			expect(result).toContain("unarchived");
+			expect(editSpy).toHaveBeenCalledWith({ archived: false });
+		});
+
+		it("throws UserError for unknown threadId", async () => {
+			try {
+				await callTool("archive_thread", { threadId: "0000000000000000000" });
+				expect.unreachable("Should have thrown");
+			} catch (e) {
+				expect(e).toBeInstanceOf(UserError);
+			}
+		});
+	});
+
+	describe("lock_thread", () => {
+		it("locks a thread", async () => {
+			const thread = await client.channels.fetch(THREAD_ACTIVE.id);
+			const editSpy = mock(async () => {});
+			thread.edit = editSpy;
+
+			const result = await callTool("lock_thread", { threadId: THREAD_ACTIVE.id });
+			expect(result).toContain("✅");
+			expect(result).toContain("locked");
+			expect(result).toContain(THREAD_ACTIVE.name);
+			expect(editSpy).toHaveBeenCalledWith({ locked: true });
+		});
+
+		it("unlocks a thread", async () => {
+			const thread = await client.channels.fetch(THREAD_ACTIVE.id);
+			const editSpy = mock(async () => {});
+			thread.edit = editSpy;
+
+			const result = await callTool("lock_thread", {
+				threadId: THREAD_ACTIVE.id,
+				locked: false,
+			});
+			expect(result).toContain("✅");
+			expect(result).toContain("unlocked");
+			expect(editSpy).toHaveBeenCalledWith({ locked: false });
+		});
+
+		it("throws UserError for unknown threadId", async () => {
+			try {
+				await callTool("lock_thread", { threadId: "0000000000000000000" });
+				expect.unreachable("Should have thrown");
+			} catch (e) {
+				expect(e).toBeInstanceOf(UserError);
+			}
+		});
+	});
+
+	describe("add_thread_member", () => {
+		it("adds a user to a private thread", async () => {
+			const thread = await client.channels.fetch(THREAD_PRIVATE.id);
+			const addSpy = mock(async () => {});
+			thread.members.add = addSpy;
+
+			const result = await callTool("add_thread_member", {
+				threadId: THREAD_PRIVATE.id,
+				userId: REGULAR_USER.id,
+			});
+			expect(result).toContain("✅");
+			expect(result).toContain(REGULAR_USER.id);
+			expect(result).toContain(THREAD_PRIVATE.name);
+			expect(addSpy).toHaveBeenCalledWith(REGULAR_USER.id);
+		});
+
+		it("throws UserError for public thread", async () => {
+			try {
+				await callTool("add_thread_member", {
+					threadId: THREAD_ACTIVE.id,
+					userId: REGULAR_USER.id,
+				});
+				expect.unreachable("Should have thrown");
+			} catch (e) {
+				expect(e).toBeInstanceOf(UserError);
+				expect((e as UserError).message).toContain("private threads");
+			}
+		});
+
+		it("throws UserError for unknown threadId", async () => {
+			try {
+				await callTool("add_thread_member", {
+					threadId: "0000000000000000000",
+					userId: REGULAR_USER.id,
+				});
+				expect.unreachable("Should have thrown");
+			} catch (e) {
+				expect(e).toBeInstanceOf(UserError);
+			}
+		});
+	});
+
+	describe("remove_thread_member", () => {
+		it("removes a user from a private thread", async () => {
+			const thread = await client.channels.fetch(THREAD_PRIVATE.id);
+			const removeSpy = mock(async () => {});
+			thread.members.remove = removeSpy;
+
+			const result = await callTool("remove_thread_member", {
+				threadId: THREAD_PRIVATE.id,
+				userId: REGULAR_USER.id,
+			});
+			expect(result).toContain("✅");
+			expect(result).toContain(REGULAR_USER.id);
+			expect(result).toContain(THREAD_PRIVATE.name);
+			expect(removeSpy).toHaveBeenCalledWith(REGULAR_USER.id);
+		});
+
+		it("throws UserError for public thread", async () => {
+			try {
+				await callTool("remove_thread_member", {
+					threadId: THREAD_ACTIVE.id,
+					userId: REGULAR_USER.id,
+				});
+				expect.unreachable("Should have thrown");
+			} catch (e) {
+				expect(e).toBeInstanceOf(UserError);
+				expect((e as UserError).message).toContain("private threads");
+			}
+		});
+
+		it("throws UserError for unknown threadId", async () => {
+			try {
+				await callTool("remove_thread_member", {
+					threadId: "0000000000000000000",
+					userId: REGULAR_USER.id,
+				});
+				expect.unreachable("Should have thrown");
+			} catch (e) {
+				expect(e).toBeInstanceOf(UserError);
+			}
 		});
 	});
 });

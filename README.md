@@ -27,11 +27,11 @@
 | 💬 **Messages**    | `send_message`, `read_messages`, `edit_message`, `delete_message`, `add_reaction`, `remove_reaction`, `bulk_delete_messages`, `pin_message`, `unpin_message`, `get_pinned_messages`, `get_reactions`, `clear_reactions` |
 | 🔗 **Webhooks**    | `list_webhooks`, `create_webhook`, `delete_webhook`, `send_webhook_message`, `edit_webhook`                                                            |
 | 🎭 **Roles**       | `list_roles`, `create_role`, `edit_role`, `delete_role`, `assign_role`, `remove_role`                                                                  |
-| 🧵 **Threads**     | `list_threads`, `create_thread`, `reply_to_thread`, `get_thread`                                                                                       |
+| 🧵 **Threads**     | `list_threads`, `create_thread`, `reply_to_thread`, `get_thread`, `archive_thread`, `lock_thread`, `add_thread_member`, `remove_thread_member`         |
 | 👤 **Members**     | `get_member`, `list_members`, `edit_member`, `get_member_presence`, `kick_member`, `ban_member`, `unban_member`, `list_bans`, `timeout_member` |
 | 📨 **Invites**     | `create_invite`, `list_invites`, `delete_invite`                                                                                                       |
 
-**49 tools** covering the most common Discord operations. Forum posts are supported via `create_thread`.
+**53 tools** covering the most common Discord operations. Forum posts are supported via `create_thread`.
 
 > ✦ `get_member_presence` requires the **Presence Intent** to be enabled in the Discord Developer Portal (see setup steps below). Presence is Gateway-only and cannot be fetched via REST — the tool returns live status after the bot observes the first `presenceUpdate` event for a member.
 

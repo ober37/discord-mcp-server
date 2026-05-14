@@ -156,6 +156,14 @@ When `pin_message` is called, Discord automatically posts a **system message** i
 
 **Impact on `get_pinned_messages`:** The system notification is not a pinned message — it will not appear in `fetchPinned()` results. No code change needed.
 
+### `create_thread` (public) triggers a Discord system notification message
+
+When a **public thread** is created in a text channel, Discord automatically posts a system message in the parent channel: "Bot started a thread: thread-name". This message has its own ID and persists even after the thread itself is deleted.
+
+**Impact on smoke tests:** After creating a public thread for testing, always call `read_messages` on the parent channel to capture the system notification's ID, then delete it explicitly during cleanup. The notification is the last message in the channel after creation and shows the thread name as content in `read_messages` output.
+
+**Private threads** do not generate a visible system notification in the parent channel — only public thread creation does this.
+
 ### `reactions.resolve()` vs `reactions.cache.get()` — use resolve for user lookups
 
 Two different APIs exist for looking up a reaction on a message:
@@ -248,6 +256,51 @@ All three must be clean before any commit:
 | Types | `bun run typecheck` | 0 errors |
 
 For any tool that performs a **write operation** (POST / PATCH / DELETE), also do a live smoke test against a real Discord guild before committing. Unit tests mock the API and will not catch Bun runtime issues.
+
+---
+
+### Three-review gate before every PR
+
+**All three reviews are required before opening any PR. Present findings from all three to the user together — do not open the PR until the user has seen and approved the full review output.**
+
+The sequence is:
+1. Run `/review` (automated code review)
+2. Run `/security-review` (automated security review)
+3. Perform a **deep manual review** of the diff (see checklist below)
+4. Present all findings together to the user
+5. Fix every finding, re-run the pre-commit gate, repeat reviews until clean
+6. Only then open the PR — never before
+
+**Code review checklist** (verify for every new or changed tool):
+- All tools wrap their execute body in `withDiscordErrorHandling`
+- `resolveGuild` is called and its result used — never called just for side-effect validation while the resource is fetched independently
+- No dead code (unreachable null guards, unused return values, stale variables)
+- New Discord API error codes added to `DISCORD_ERROR_MAP` in `utils.ts`
+- Every parameter has `.describe()`; all success strings have a `✅` prefix
+- README tool count matches the actual sum of the features table
+- No unsafe type casts without a `biome-ignore` comment that explains why
+- CLAUDE.md Gateway Intents table updated if any intents changed
+- Edge cases documented in tool descriptions (e.g. permission requirements, ordering constraints)
+
+**Security review checklist** (verify for every new or changed tool):
+- No user-supplied strings passed directly to `eval`, shell commands, or template literals in API calls without validation
+- All resource lookups go through `withDiscordErrorHandling` — no raw try/catch that swallows errors silently
+- No credentials, tokens, or secrets logged or returned in success/error strings
+- `UserError` used for all client-facing errors — never expose raw Discord API error details beyond what `DISCORD_ERROR_MAP` provides
+- Write operations (POST/PATCH/DELETE) require appropriate Discord permissions — permission requirement documented in the tool description
+- No SSRF risk from user-supplied URLs — attachment URLs go through `fetchAttachments`; never bypass this for new attachment-handling tools
+- Parameters accepting IDs are typed as strings — no coercion that could allow unexpected inputs
+- No unbounded operations (fetching all members/messages without a limit) that could DoS the Discord API or exhaust memory
+- Bot token and guild ID come only from config (`src/config.ts`) — never from tool parameters
+
+**Deep manual review checklist** (for every new tool, look up the discord.js docs / API behavior):
+- Verify each discord.js API call used actually exists and behaves as expected (don't assume — check)
+- For `edit()`-style calls: confirm which fields can be combined in a single call vs. which require separate calls; confirm Discord API accepts the exact payload shape being sent
+- For member/user operations: confirm what happens when the target user doesn't exist in the guild, isn't in the thread, or is already in the thread — does Discord return a clear error or silently succeed?
+- For state-changing tools: document any ordering constraints in the tool description (e.g. must be unarchived before locking)
+- For tools that do NOT call `resolveGuild`: confirm this is intentional and the tool cannot be misdirected to operate on a resource in a different guild
+- For every tool: confirm the success string accurately reflects what actually happened (e.g. if an op is idempotent, the message should not imply it changed state when it may not have)
+- For every tool: confirm permission requirements are complete — check discord.js source or API docs, not just assumptions
 
 **Also update `README.md` when any of the following change:**
 

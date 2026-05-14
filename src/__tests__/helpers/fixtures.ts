@@ -225,6 +225,7 @@ export const THREAD_ACTIVE = {
 	id: "8800000000000000001",
 	name: "Help with TypeScript",
 	archived: false,
+	locked: false,
 	messageCount: 15,
 	memberCount: 3,
 	parentId: CHANNEL_DEV_CHAT.id,
@@ -236,11 +237,24 @@ export const THREAD_ARCHIVED = {
 	id: "8800000000000000002",
 	name: "Old Discussion",
 	archived: true,
+	locked: false,
 	messageCount: 42,
 	memberCount: 7,
 	parentId: CHANNEL_DEV_CHAT.id,
 	createdAt: new Date("2024-05-01T12:00:00.000Z"),
 	type: 11, // PublicThread
+} as const;
+
+export const THREAD_PRIVATE = {
+	id: "8800000000000000003",
+	name: "Private Discussion",
+	archived: false,
+	locked: false,
+	messageCount: 5,
+	memberCount: 2,
+	parentId: CHANNEL_DEV_CHAT.id,
+	createdAt: new Date("2024-07-01T10:00:00.000Z"),
+	type: 12, // PrivateThread
 } as const;
 
 // ─── Webhooks ───────────────────────────────────────────────────────────────

@@ -62,6 +62,7 @@ const DISCORD_ERROR_MAP: Record<number, string> = {
 	50035: "Invalid form body.",
 	30005: "Maximum number of roles reached for the server.",
 	10006: "Unknown invite. The invite may have expired or already been revoked.",
+	10007: "Unknown member.",
 };
 
 /**
