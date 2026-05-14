@@ -1,5 +1,5 @@
-import type { Client, PresenceStatus } from "discord.js";
-import type { FastMCP } from "fastmcp";
+import type { Client, GuildBan, PresenceStatus } from "discord.js";
+import { type FastMCP, UserError } from "fastmcp";
 import { z } from "zod/v4";
 import { resolveGuild, withDiscordErrorHandling } from "../utils.ts";
 
@@ -173,7 +173,8 @@ export function registerMemberTools(
 
 	server.addTool({
 		name: "kick_member",
-		description: "Remove a member from the guild. They can rejoin with a valid invite.",
+		description:
+			"Remove a member from the guild. They can rejoin with a valid invite. Requires the Kick Members permission.",
 		parameters: z.object({
 			guildId: z.string().optional().describe("Server ID. Falls back to DISCORD_GUILD_ID env var."),
 			userId: z.string().describe("ID of the member to kick."),
@@ -183,6 +184,11 @@ export function registerMemberTools(
 			return withDiscordErrorHandling(async () => {
 				const guild = await resolveGuild(client, args.guildId, defaultGuildId);
 				const member = await guild.members.fetch(args.userId);
+				if (!member.kickable) {
+					throw new UserError(
+						`Cannot kick ${member.user.tag}: the bot lacks the Kick Members permission or the member's role is equal to or higher than the bot's highest role.`,
+					);
+				}
 				await member.kick(args.reason);
 				return `✅ Kicked ${member.user.tag} (ID: ${member.id})${args.reason ? ` — Reason: ${args.reason}` : ""}`;
 			});
@@ -191,7 +197,8 @@ export function registerMemberTools(
 
 	server.addTool({
 		name: "ban_member",
-		description: "Ban a user from the guild, optionally deleting their recent messages.",
+		description:
+			"Ban a user from the guild, optionally deleting their recent messages. Requires the Ban Members permission.",
 		parameters: z.object({
 			guildId: z.string().optional().describe("Server ID. Falls back to DISCORD_GUILD_ID env var."),
 			userId: z
@@ -207,10 +214,11 @@ export function registerMemberTools(
 			return withDiscordErrorHandling(async () => {
 				const guild = await resolveGuild(client, args.guildId, defaultGuildId);
 				const days = Math.min(Math.max(args.deleteMessageDays ?? 0, 0), 7);
-				await guild.bans.create(args.userId, {
+				const banOptions: { deleteMessageSeconds: number; reason?: string } = {
 					deleteMessageSeconds: days * 86400,
-					reason: args.reason,
-				});
+				};
+				if (args.reason !== undefined) banOptions.reason = args.reason;
+				await guild.bans.create(args.userId, banOptions);
 				const daysSuffix = days > 0 ? ` (deleted ${days}d of messages)` : "";
 				return `✅ Banned user ID ${args.userId}${args.reason ? ` — Reason: ${args.reason}` : ""}${daysSuffix}`;
 			});
@@ -219,7 +227,8 @@ export function registerMemberTools(
 
 	server.addTool({
 		name: "unban_member",
-		description: "Reverse a ban by user ID, restoring their ability to join the guild.",
+		description:
+			"Reverse a ban by user ID, restoring their ability to join the guild. Requires the Ban Members permission.",
 		parameters: z.object({
 			guildId: z.string().optional().describe("Server ID. Falls back to DISCORD_GUILD_ID env var."),
 			userId: z.string().describe("ID of the user to unban."),
@@ -236,7 +245,7 @@ export function registerMemberTools(
 
 	server.addTool({
 		name: "list_bans",
-		description: "List all active bans in the guild.",
+		description: "List all active bans in the guild. Requires the Ban Members permission.",
 		parameters: z.object({
 			guildId: z.string().optional().describe("Server ID. Falls back to DISCORD_GUILD_ID env var."),
 			limit: z
@@ -250,12 +259,10 @@ export function registerMemberTools(
 				const limit = Math.min(Math.max(args.limit ?? 100, 1), 1000);
 				const bans = await guild.bans.fetch({ limit });
 				if (bans.size === 0) return "No active bans.";
-				const lines = bans.map(
-					(ban: { user: { tag: string; id: string }; reason?: string | null }) => {
-						const reason = ban.reason ? ` — ${ban.reason}` : "";
-						return `• ${ban.user.tag} (ID: ${ban.user.id})${reason}`;
-					},
-				);
+				const lines = bans.map((ban: GuildBan) => {
+					const reason = ban.reason ? ` — ${ban.reason}` : "";
+					return `• ${ban.user.tag} (ID: ${ban.user.id})${reason}`;
+				});
 				return `**Bans (${bans.size}):**\n${lines.join("\n")}`;
 			});
 		},
@@ -264,7 +271,7 @@ export function registerMemberTools(
 	server.addTool({
 		name: "timeout_member",
 		description:
-			"Apply or remove a communication timeout for a member. Timed-out members cannot send messages, add reactions, join voice, or use stage channels.",
+			"Apply or remove a communication timeout for a member. Timed-out members cannot send messages, add reactions, join voice, or use stage channels. Requires the Moderate Members permission.",
 		parameters: z.object({
 			guildId: z.string().optional().describe("Server ID. Falls back to DISCORD_GUILD_ID env var."),
 			userId: z.string().describe("ID of the member to timeout."),
@@ -280,6 +287,11 @@ export function registerMemberTools(
 			return withDiscordErrorHandling(async () => {
 				const guild = await resolveGuild(client, args.guildId, defaultGuildId);
 				const member = await guild.members.fetch(args.userId);
+				if (!member.moderatable) {
+					throw new UserError(
+						`Cannot timeout ${member.user.tag}: the bot lacks the Moderate Members permission or the member's role is equal to or higher than the bot's highest role.`,
+					);
+				}
 				const clampedMinutes =
 					args.durationMinutes && args.durationMinutes > 0
 						? Math.min(args.durationMinutes, 40320)

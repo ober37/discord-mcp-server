@@ -62,7 +62,8 @@ const DISCORD_ERROR_MAP: Record<number, string> = {
 	50035: "Invalid form body.",
 	30005: "Maximum number of roles reached for the server.",
 	10006: "Unknown invite. The invite may have expired or already been revoked.",
-	10007: "Unknown member.",
+	10007: "Unknown member. The user is not a member of this guild.",
+	10026: "Unknown ban. This user does not have an active ban in this guild.",
 };
 
 /**

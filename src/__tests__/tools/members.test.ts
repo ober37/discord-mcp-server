@@ -472,6 +472,23 @@ describe("member tools", () => {
 			expect(result).not.toContain("Reason:");
 		});
 
+		it("throws UserError when member.kickable is false (hierarchy / permission guard)", async () => {
+			const guild = client.guilds.cache.get(GUILD_FIXTURE.id);
+			const member = guild.members.cache.get(REGULAR_USER.id);
+			member.kickable = false;
+
+			try {
+				await callTool("kick_member", {
+					userId: REGULAR_USER.id,
+					guildId: GUILD_FIXTURE.id,
+				});
+				expect.unreachable("Should have thrown");
+			} catch (e) {
+				expect(e).toBeInstanceOf(UserError);
+				expect((e as UserError).message).toContain("Cannot kick");
+			}
+		});
+
 		it("throws UserError for unknown userId", async () => {
 			try {
 				await callTool("kick_member", {
@@ -497,9 +514,9 @@ describe("member tools", () => {
 			});
 			expect(result).toContain("✅");
 			expect(result).toContain(REGULAR_USER.id);
+			// reason omitted entirely when not provided (not passed as undefined)
 			expect(banSpy).toHaveBeenCalledWith(REGULAR_USER.id, {
 				deleteMessageSeconds: 0,
-				reason: undefined,
 			});
 		});
 
@@ -515,7 +532,6 @@ describe("member tools", () => {
 			});
 			expect(banSpy).toHaveBeenCalledWith(REGULAR_USER.id, {
 				deleteMessageSeconds: 7 * 86400,
-				reason: undefined,
 			});
 		});
 
@@ -531,7 +547,6 @@ describe("member tools", () => {
 			});
 			expect(banSpy).toHaveBeenCalledWith(REGULAR_USER.id, {
 				deleteMessageSeconds: 7 * 86400,
-				reason: undefined,
 			});
 		});
 
@@ -765,6 +780,24 @@ describe("member tools", () => {
 			});
 			expect(result).toContain("Flooding chat");
 			expect(timeoutSpy).toHaveBeenCalledWith(600_000, "Flooding chat");
+		});
+
+		it("throws UserError when member.moderatable is false (hierarchy / permission guard)", async () => {
+			const guild = client.guilds.cache.get(GUILD_FIXTURE.id);
+			const member = guild.members.cache.get(REGULAR_USER.id);
+			member.moderatable = false;
+
+			try {
+				await callTool("timeout_member", {
+					userId: REGULAR_USER.id,
+					durationMinutes: 5,
+					guildId: GUILD_FIXTURE.id,
+				});
+				expect.unreachable("Should have thrown");
+			} catch (e) {
+				expect(e).toBeInstanceOf(UserError);
+				expect((e as UserError).message).toContain("Cannot timeout");
+			}
 		});
 
 		it("throws UserError for unknown userId", async () => {
