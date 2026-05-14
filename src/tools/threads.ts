@@ -244,7 +244,8 @@ export function registerThreadTools(
 
 	server.addTool({
 		name: "archive_thread",
-		description: "Archive or unarchive a thread.",
+		description:
+			"Archive or unarchive a thread. Archiving a thread you did not create requires MANAGE_THREADS.",
 		parameters: z.object({
 			threadId: z.string().describe("ID of the thread to archive or unarchive."),
 			archived: z

@@ -259,9 +259,17 @@ For any tool that performs a **write operation** (POST / PATCH / DELETE), also d
 
 ---
 
-### Code review + security review
+### Three-review gate before every PR
 
-Both `/review` and `/security-review` are **required** on every branch before opening a PR — not optional. Run them after the pre-commit gate passes. Fix every finding, re-run the gate, and repeat until both are clean.
+**All three reviews are required before opening any PR. Present findings from all three to the user together — do not open the PR until the user has seen and approved the full review output.**
+
+The sequence is:
+1. Run `/review` (automated code review)
+2. Run `/security-review` (automated security review)
+3. Perform a **deep manual review** of the diff (see checklist below)
+4. Present all findings together to the user
+5. Fix every finding, re-run the pre-commit gate, repeat reviews until clean
+6. Only then open the PR — never before
 
 **Code review checklist** (verify for every new or changed tool):
 - All tools wrap their execute body in `withDiscordErrorHandling`
@@ -272,7 +280,7 @@ Both `/review` and `/security-review` are **required** on every branch before op
 - README tool count matches the actual sum of the features table
 - No unsafe type casts without a `biome-ignore` comment that explains why
 - CLAUDE.md Gateway Intents table updated if any intents changed
-- Edge cases documented in tool descriptions (e.g. permission requirements, ordering constraints like "must be unarchived before locking")
+- Edge cases documented in tool descriptions (e.g. permission requirements, ordering constraints)
 
 **Security review checklist** (verify for every new or changed tool):
 - No user-supplied strings passed directly to `eval`, shell commands, or template literals in API calls without validation
@@ -284,6 +292,15 @@ Both `/review` and `/security-review` are **required** on every branch before op
 - Parameters accepting IDs are typed as strings — no coercion that could allow unexpected inputs
 - No unbounded operations (fetching all members/messages without a limit) that could DoS the Discord API or exhaust memory
 - Bot token and guild ID come only from config (`src/config.ts`) — never from tool parameters
+
+**Deep manual review checklist** (for every new tool, look up the discord.js docs / API behavior):
+- Verify each discord.js API call used actually exists and behaves as expected (don't assume — check)
+- For `edit()`-style calls: confirm which fields can be combined in a single call vs. which require separate calls; confirm Discord API accepts the exact payload shape being sent
+- For member/user operations: confirm what happens when the target user doesn't exist in the guild, isn't in the thread, or is already in the thread — does Discord return a clear error or silently succeed?
+- For state-changing tools: document any ordering constraints in the tool description (e.g. must be unarchived before locking)
+- For tools that do NOT call `resolveGuild`: confirm this is intentional and the tool cannot be misdirected to operate on a resource in a different guild
+- For every tool: confirm the success string accurately reflects what actually happened (e.g. if an op is idempotent, the message should not imply it changed state when it may not have)
+- For every tool: confirm permission requirements are complete — check discord.js source or API docs, not just assumptions
 
 **Also update `README.md` when any of the following change:**
 
