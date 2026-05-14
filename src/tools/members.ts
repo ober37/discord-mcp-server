@@ -170,4 +170,127 @@ export function registerMemberTools(
 			});
 		},
 	});
+
+	server.addTool({
+		name: "kick_member",
+		description: "Remove a member from the guild. They can rejoin with a valid invite.",
+		parameters: z.object({
+			guildId: z.string().optional().describe("Server ID. Falls back to DISCORD_GUILD_ID env var."),
+			userId: z.string().describe("ID of the member to kick."),
+			reason: z.string().optional().describe("Reason for the kick (recorded in the audit log)."),
+		}),
+		execute: async (args) => {
+			return withDiscordErrorHandling(async () => {
+				const guild = await resolveGuild(client, args.guildId, defaultGuildId);
+				const member = await guild.members.fetch(args.userId);
+				await member.kick(args.reason);
+				return `✅ Kicked ${member.user.tag} (ID: ${member.id})${args.reason ? ` — Reason: ${args.reason}` : ""}`;
+			});
+		},
+	});
+
+	server.addTool({
+		name: "ban_member",
+		description: "Ban a user from the guild, optionally deleting their recent messages.",
+		parameters: z.object({
+			guildId: z.string().optional().describe("Server ID. Falls back to DISCORD_GUILD_ID env var."),
+			userId: z
+				.string()
+				.describe("ID of the user to ban. The user does not need to be a current member."),
+			reason: z.string().optional().describe("Reason for the ban (recorded in the audit log)."),
+			deleteMessageDays: z
+				.number()
+				.optional()
+				.describe("Days of message history to delete (0–7). Default: 0."),
+		}),
+		execute: async (args) => {
+			return withDiscordErrorHandling(async () => {
+				const guild = await resolveGuild(client, args.guildId, defaultGuildId);
+				const days = Math.min(Math.max(args.deleteMessageDays ?? 0, 0), 7);
+				await guild.bans.create(args.userId, {
+					deleteMessageSeconds: days * 86400,
+					reason: args.reason,
+				});
+				const daysSuffix = days > 0 ? ` (deleted ${days}d of messages)` : "";
+				return `✅ Banned user ID ${args.userId}${args.reason ? ` — Reason: ${args.reason}` : ""}${daysSuffix}`;
+			});
+		},
+	});
+
+	server.addTool({
+		name: "unban_member",
+		description: "Reverse a ban by user ID, restoring their ability to join the guild.",
+		parameters: z.object({
+			guildId: z.string().optional().describe("Server ID. Falls back to DISCORD_GUILD_ID env var."),
+			userId: z.string().describe("ID of the user to unban."),
+			reason: z.string().optional().describe("Reason for the unban (recorded in the audit log)."),
+		}),
+		execute: async (args) => {
+			return withDiscordErrorHandling(async () => {
+				const guild = await resolveGuild(client, args.guildId, defaultGuildId);
+				await guild.bans.remove(args.userId, args.reason);
+				return `✅ Unbanned user ID ${args.userId}${args.reason ? ` — Reason: ${args.reason}` : ""}`;
+			});
+		},
+	});
+
+	server.addTool({
+		name: "list_bans",
+		description: "List all active bans in the guild.",
+		parameters: z.object({
+			guildId: z.string().optional().describe("Server ID. Falls back to DISCORD_GUILD_ID env var."),
+			limit: z
+				.number()
+				.optional()
+				.describe("Maximum number of bans to return (1–1000). Default: 100."),
+		}),
+		execute: async (args) => {
+			return withDiscordErrorHandling(async () => {
+				const guild = await resolveGuild(client, args.guildId, defaultGuildId);
+				const limit = Math.min(Math.max(args.limit ?? 100, 1), 1000);
+				const bans = await guild.bans.fetch({ limit });
+				if (bans.size === 0) return "No active bans.";
+				const lines = bans.map(
+					(ban: { user: { tag: string; id: string }; reason?: string | null }) => {
+						const reason = ban.reason ? ` — ${ban.reason}` : "";
+						return `• ${ban.user.tag} (ID: ${ban.user.id})${reason}`;
+					},
+				);
+				return `**Bans (${bans.size}):**\n${lines.join("\n")}`;
+			});
+		},
+	});
+
+	server.addTool({
+		name: "timeout_member",
+		description:
+			"Apply or remove a communication timeout for a member. Timed-out members cannot send messages, add reactions, join voice, or use stage channels.",
+		parameters: z.object({
+			guildId: z.string().optional().describe("Server ID. Falls back to DISCORD_GUILD_ID env var."),
+			userId: z.string().describe("ID of the member to timeout."),
+			durationMinutes: z
+				.number()
+				.optional()
+				.describe(
+					"Timeout duration in minutes (1–40320, max 28 days). Omit or pass 0 to remove an existing timeout.",
+				),
+			reason: z.string().optional().describe("Reason for the timeout (recorded in the audit log)."),
+		}),
+		execute: async (args) => {
+			return withDiscordErrorHandling(async () => {
+				const guild = await resolveGuild(client, args.guildId, defaultGuildId);
+				const member = await guild.members.fetch(args.userId);
+				const clampedMinutes =
+					args.durationMinutes && args.durationMinutes > 0
+						? Math.min(args.durationMinutes, 40320)
+						: null;
+				const durationMs = clampedMinutes !== null ? clampedMinutes * 60 * 1000 : null;
+				await member.timeout(durationMs, args.reason);
+				if (durationMs === null) {
+					return `✅ Removed timeout for ${member.user.tag} (ID: ${member.id})`;
+				}
+				return `✅ Timed out ${member.user.tag} (ID: ${member.id}) for ${clampedMinutes} minute(s)${args.reason ? ` — Reason: ${args.reason}` : ""}`;
+			});
+		},
+	});
 }
