@@ -257,6 +257,34 @@ All three must be clean before any commit:
 
 For any tool that performs a **write operation** (POST / PATCH / DELETE), also do a live smoke test against a real Discord guild before committing. Unit tests mock the API and will not catch Bun runtime issues.
 
+---
+
+### Code review + security review
+
+Both `/review` and `/security-review` are **required** on every branch before opening a PR — not optional. Run them after the pre-commit gate passes. Fix every finding, re-run the gate, and repeat until both are clean.
+
+**Code review checklist** (verify for every new or changed tool):
+- All tools wrap their execute body in `withDiscordErrorHandling`
+- `resolveGuild` is called and its result used — never called just for side-effect validation while the resource is fetched independently
+- No dead code (unreachable null guards, unused return values, stale variables)
+- New Discord API error codes added to `DISCORD_ERROR_MAP` in `utils.ts`
+- Every parameter has `.describe()`; all success strings have a `✅` prefix
+- README tool count matches the actual sum of the features table
+- No unsafe type casts without a `biome-ignore` comment that explains why
+- CLAUDE.md Gateway Intents table updated if any intents changed
+- Edge cases documented in tool descriptions (e.g. permission requirements, ordering constraints like "must be unarchived before locking")
+
+**Security review checklist** (verify for every new or changed tool):
+- No user-supplied strings passed directly to `eval`, shell commands, or template literals in API calls without validation
+- All resource lookups go through `withDiscordErrorHandling` — no raw try/catch that swallows errors silently
+- No credentials, tokens, or secrets logged or returned in success/error strings
+- `UserError` used for all client-facing errors — never expose raw Discord API error details beyond what `DISCORD_ERROR_MAP` provides
+- Write operations (POST/PATCH/DELETE) require appropriate Discord permissions — permission requirement documented in the tool description
+- No SSRF risk from user-supplied URLs — attachment URLs go through `fetchAttachments`; never bypass this for new attachment-handling tools
+- Parameters accepting IDs are typed as strings — no coercion that could allow unexpected inputs
+- No unbounded operations (fetching all members/messages without a limit) that could DoS the Discord API or exhaust memory
+- Bot token and guild ID come only from config (`src/config.ts`) — never from tool parameters
+
 **Also update `README.md` when any of the following change:**
 
 - A new tool is added → update the features table (tool name + description)
