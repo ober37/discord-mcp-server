@@ -156,6 +156,14 @@ When `pin_message` is called, Discord automatically posts a **system message** i
 
 **Impact on `get_pinned_messages`:** The system notification is not a pinned message — it will not appear in `fetchPinned()` results. No code change needed.
 
+### `create_thread` (public) triggers a Discord system notification message
+
+When a **public thread** is created in a text channel, Discord automatically posts a system message in the parent channel: "Bot started a thread: thread-name". This message has its own ID and persists even after the thread itself is deleted.
+
+**Impact on smoke tests:** After creating a public thread for testing, always call `read_messages` on the parent channel to capture the system notification's ID, then delete it explicitly during cleanup. The notification is the last message in the channel after creation and shows the thread name as content in `read_messages` output.
+
+**Private threads** do not generate a visible system notification in the parent channel — only public thread creation does this.
+
 ### `reactions.resolve()` vs `reactions.cache.get()` — use resolve for user lookups
 
 Two different APIs exist for looking up a reaction on a message:
