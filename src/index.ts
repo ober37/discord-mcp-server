@@ -5,6 +5,7 @@ import { loadConfig } from "./config.ts";
 import { createDiscordClient } from "./discord.ts";
 import { registerAuditTools } from "./tools/audit.ts";
 import { registerChannelTools } from "./tools/channels.ts";
+import { registerCommandTools } from "./tools/commands.ts";
 import { registerDmTools } from "./tools/dm.ts";
 import { registerEmojiTools } from "./tools/emojis.ts";
 import { registerEventTools } from "./tools/events.ts";
@@ -80,6 +81,7 @@ async function main() {
 	registerDmTools(server, discordClient);
 	registerAuditTools(server, discordClient, guildId);
 	registerEventTools(server, discordClient, guildId);
+	registerCommandTools(server, discordClient, guildId);
 
 	// Start the server with the configured transport
 	if (config.transport === "stdio") {
@@ -124,6 +126,7 @@ export function createSandboxServer() {
 	registerDmTools(server, mockClient);
 	registerAuditTools(server, mockClient, undefined);
 	registerEventTools(server, mockClient, undefined);
+	registerCommandTools(server, mockClient, undefined);
 
 	return server;
 }

@@ -470,3 +470,19 @@ export const EVENT_VOICE = {
 } as const;
 
 export const ALL_EVENTS = [EVENT_EXTERNAL, EVENT_VOICE] as const;
+
+// ─── Application Commands ──────────────────────────────────────────────────────
+
+export const COMMAND_PING = {
+	id: "cmd-0000000000000001",
+	name: "ping",
+	description: "Reply with pong",
+} as const;
+
+export const COMMAND_INFO = {
+	id: "cmd-0000000000000002",
+	name: "info",
+	description: "Get server info",
+} as const;
+
+export const ALL_COMMANDS = [COMMAND_PING, COMMAND_INFO] as const;
