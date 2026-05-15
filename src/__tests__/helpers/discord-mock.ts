@@ -9,6 +9,7 @@
 import {
 	ALL_AUDIT_LOG_ENTRIES,
 	ALL_CHANNELS,
+	ALL_COMMANDS,
 	ALL_EMOJIS,
 	ALL_EVENTS,
 	ALL_INVITES,
@@ -634,6 +635,20 @@ function createMockGuild(): any {
 				scheduledStartAt: opts.scheduledStartTime,
 			}),
 		},
+		commands: {
+			fetch: async (id?: string) => {
+				if (typeof id === "string") {
+					const found = ALL_COMMANDS.find((c) => c.id === id);
+					if (!found) throw new Error(`Unknown Application Command: ${id}`);
+					return createCollection([[found.id, found]]);
+				}
+				return createCollection(ALL_COMMANDS.map((c) => [c.id, c]));
+			},
+			delete: async (commandId: string) => {
+				const found = ALL_COMMANDS.find((c) => c.id === commandId);
+				if (!found) throw new Error(`Unknown Application Command: ${commandId}`);
+			},
+		},
 		fetchAuditLogs: async (opts?: { limit?: number; type?: number; user?: string }) => {
 			let entries = Array.from(ALL_AUDIT_LOG_ENTRIES);
 			if (opts?.type !== undefined) {
@@ -739,6 +754,15 @@ export function createMockDiscordClient(): any {
 				const user = dmUserMap.get(id);
 				if (!user) throw new Error(`Unknown User: ${id}`);
 				return user;
+			},
+		},
+		application: {
+			commands: {
+				fetch: async () => createCollection(ALL_COMMANDS.map((c) => [c.id, c])),
+				delete: async (commandId: string) => {
+					const found = ALL_COMMANDS.find((c) => c.id === commandId);
+					if (!found) throw new Error(`Unknown Application Command: ${commandId}`);
+				},
 			},
 		},
 		fetchWebhook: async (id: string, _token?: string) => {
