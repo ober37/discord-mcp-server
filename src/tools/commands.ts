@@ -57,7 +57,7 @@ export function registerCommandTools(
 	server.addTool({
 		name: "delete_slash_command",
 		description:
-			"Delete a registered application (slash) command by ID. If guildId is provided, deletes a guild-specific command; otherwise deletes a global command. Requires MANAGE_GUILD for guild commands. This action is permanent.",
+			"Delete a registered application (slash) command by ID. If guildId is provided, deletes a guild-specific command; otherwise deletes a global command. Bot must own the command — only commands registered by this application can be deleted. Requires the bot's OAuth2 invite to include the applications.commands scope. This action is permanent.",
 		parameters: z.object({
 			commandId: z.string().describe("ID of the application command to delete."),
 			guildId: z
