@@ -60,6 +60,7 @@ const DISCORD_ERROR_MAP: Record<number, string> = {
 	50013: "Missing permissions. The bot lacks the required permissions for this action.",
 	50034: "You can only bulk delete messages that are under 14 days old.",
 	50035: "Invalid form body.",
+	30003: "Maximum number of pins reached for this channel (limit: 50).",
 	30005: "Maximum number of roles reached for the server.",
 	10006: "Unknown invite. The invite may have expired or already been revoked.",
 	10007: "Unknown member. The user is not a member of this guild.",
