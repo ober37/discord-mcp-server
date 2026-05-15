@@ -8,6 +8,7 @@
 
 import {
 	ALL_CHANNELS,
+	ALL_EMOJIS,
 	ALL_INVITES,
 	ALL_MEMBER_FIXTURES,
 	ALL_ROLES,
@@ -334,6 +335,19 @@ function createMockWebhook(fixture: typeof WEBHOOK_GITHUB | typeof WEBHOOK_MONIT
 	};
 }
 
+// ─── Emoji Mock ─────────────────────────────────────────────────────────────
+
+// biome-ignore lint/suspicious/noExplicitAny: mock factory
+function createMockEmoji(fixture: (typeof ALL_EMOJIS)[number]): any {
+	return {
+		id: fixture.id,
+		name: fixture.name,
+		animated: fixture.animated,
+		guildId: fixture.guildId,
+		delete: async () => {},
+	};
+}
+
 // ─── Role Mock ──────────────────────────────────────────────────────────────
 
 // biome-ignore lint/suspicious/noExplicitAny: mock factory
@@ -410,6 +424,11 @@ function createMockGuild(): any {
 		(m) => [m.id, createMockMember(m)] as [string, ReturnType<typeof createMockMember>],
 	);
 	const membersCache = createCollection(memberEntries);
+
+	const emojiEntries = ALL_EMOJIS.map(
+		(e) => [e.id, createMockEmoji(e)] as [string, ReturnType<typeof createMockEmoji>],
+	);
+	const emojisCache = createCollection(emojiEntries);
 
 	const guild = {
 		...GUILD_FIXTURE,
@@ -522,6 +541,22 @@ function createMockGuild(): any {
 				createCollection([
 					[BAN_FIXTURE.userId, { user: BAN_FIXTURE.user, reason: BAN_FIXTURE.reason }],
 				]),
+		},
+		emojis: {
+			cache: emojisCache,
+			fetch: async (id?: string) => {
+				if (typeof id === "string") {
+					const emoji = emojisCache.get(id);
+					if (!emoji) throw new Error("Unknown Emoji");
+					return emoji;
+				}
+				return emojisCache;
+			},
+			create: async (opts: { attachment: string; name: string }) => ({
+				id: `new-emoji-${Date.now()}`,
+				name: opts.name,
+				animated: false,
+			}),
 		},
 		fetch: async () => guild,
 		fetchOwner: async () => ({
