@@ -11,6 +11,7 @@ import {
 	CHANNEL_VOICE,
 	GUILD_FIXTURE,
 	REGULAR_USER,
+	ROLE_MEMBER,
 } from "../helpers/fixtures";
 import { createTestServer } from "../helpers/test-server";
 
@@ -404,7 +405,7 @@ describe("channel tools", () => {
 	});
 
 	describe("set_channel_permissions", () => {
-		it("creates a permission overwrite with allow and deny", async () => {
+		it("creates a permission overwrite with allow and deny for a user", async () => {
 			const channel = await client.channels.fetch(CHANNEL_GENERAL.id);
 			const createSpy = mock(() => Promise.resolve());
 			channel.permissionOverwrites = { create: createSpy, delete: async () => {} };
@@ -412,6 +413,7 @@ describe("channel tools", () => {
 			const result = await callTool("set_channel_permissions", {
 				channelId: CHANNEL_GENERAL.id,
 				targetId: REGULAR_USER.id,
+				targetType: "user",
 				allow: ["SendMessages"],
 				deny: ["ManageMessages"],
 			});
@@ -421,25 +423,48 @@ describe("channel tools", () => {
 			expect(createSpy).toHaveBeenCalledTimes(1);
 			// biome-ignore lint/suspicious/noExplicitAny: accessing mock call args dynamically
 			const callArgs = createSpy.mock.calls[0] as any;
-			expect(callArgs[0]).toBe(REGULAR_USER.id);
+			// First arg is the resolved member object (not raw string)
+			expect(callArgs[0].id).toBe(REGULAR_USER.id);
 			expect(callArgs[1].SendMessages).toBe(true);
 			expect(callArgs[1].ManageMessages).toBe(false);
 		});
 
+		it("creates a permission overwrite for a role", async () => {
+			const channel = await client.channels.fetch(CHANNEL_GENERAL.id);
+			const createSpy = mock(() => Promise.resolve());
+			channel.permissionOverwrites = { create: createSpy, delete: async () => {} };
+
+			const result = await callTool("set_channel_permissions", {
+				channelId: CHANNEL_GENERAL.id,
+				targetId: ROLE_MEMBER.id,
+				targetType: "role",
+				allow: ["ViewChannel"],
+			});
+			expect(result).toContain("✅");
+			expect(result).toContain(ROLE_MEMBER.id);
+			expect(createSpy).toHaveBeenCalledTimes(1);
+			// biome-ignore lint/suspicious/noExplicitAny: accessing mock call args dynamically
+			const roleCallArgs = createSpy.mock.calls[0] as any;
+			// First arg is the resolved role object
+			expect(roleCallArgs[0].id).toBe(ROLE_MEMBER.id);
+		});
+
 		it("removes an overwrite when deleteOverwrite is true", async () => {
 			const channel = await client.channels.fetch(CHANNEL_GENERAL.id);
-			const deleteSpy = mock((_targetId: string) => Promise.resolve());
+			const deleteSpy = mock((_target: unknown) => Promise.resolve());
 			channel.permissionOverwrites = { create: async () => {}, delete: deleteSpy };
 
 			const result = await callTool("set_channel_permissions", {
 				channelId: CHANNEL_GENERAL.id,
 				targetId: REGULAR_USER.id,
+				targetType: "user",
 				deleteOverwrite: true,
 			});
 			expect(result).toContain("✅");
 			expect(result).toContain("Removed");
 			expect(deleteSpy).toHaveBeenCalledTimes(1);
-			expect(deleteSpy.mock.calls[0][0]).toBe(REGULAR_USER.id);
+			// biome-ignore lint/suspicious/noExplicitAny: accessing mock call args dynamically
+			expect((deleteSpy.mock.calls[0] as any)[0].id).toBe(REGULAR_USER.id);
 		});
 
 		it("throws UserError for unknown channelId", async () => {
@@ -447,6 +472,7 @@ describe("channel tools", () => {
 				await callTool("set_channel_permissions", {
 					channelId: "0000000000000000000",
 					targetId: REGULAR_USER.id,
+					targetType: "user",
 					allow: ["SendMessages"],
 				});
 				expect.unreachable("Should have thrown");
@@ -460,6 +486,7 @@ describe("channel tools", () => {
 				await callTool("set_channel_permissions", {
 					channelId: CHANNEL_GENERAL.id,
 					targetId: REGULAR_USER.id,
+					targetType: "user",
 				});
 				expect.unreachable("Should have thrown");
 			} catch (e) {
@@ -472,6 +499,7 @@ describe("channel tools", () => {
 				await callTool("set_channel_permissions", {
 					channelId: CHANNEL_GENERAL.id,
 					targetId: REGULAR_USER.id,
+					targetType: "user",
 					allow: ["SendMessages"],
 					deny: ["SendMessages"],
 				});
@@ -486,6 +514,7 @@ describe("channel tools", () => {
 				await callTool("set_channel_permissions", {
 					channelId: CHANNEL_GENERAL.id,
 					targetId: REGULAR_USER.id,
+					targetType: "user",
 					allow: ["InvalidPermissionName"],
 				});
 				expect.unreachable("Should have thrown");
@@ -501,6 +530,7 @@ describe("channel tools", () => {
 				await callTool("set_channel_permissions", {
 					channelId: "no-perms",
 					targetId: REGULAR_USER.id,
+					targetType: "user",
 					allow: ["SendMessages"],
 				});
 				expect.unreachable("Should have thrown");

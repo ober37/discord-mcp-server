@@ -110,6 +110,23 @@ function createMockChannel(fixture: (typeof ALL_CHANNELS)[number]): any {
 		[WEBHOOK_MONITORING.id, createMockWebhook(WEBHOOK_MONITORING)],
 	]);
 
+	// Shared guild stub for guild channel features (text, voice, forum).
+	// Provides premiumTier for attachment size limits, and roles/members for
+	// permission overwrite resolution in set_channel_permissions.
+	const channelGuildStub = {
+		premiumTier: 0,
+		roles: {
+			cache: createCollection(ALL_ROLES.map((r) => [r.id, { id: r.id, name: r.name }])),
+		},
+		members: {
+			fetch: async (userId: string) => {
+				const found = ALL_MEMBER_FIXTURES.find((m) => m.id === userId);
+				if (!found) throw new Error(`Unknown User: ${userId}`);
+				return { id: found.id, user: found.user };
+			},
+		},
+	};
+
 	return {
 		id: fixture.id,
 		name: fixture.name,
@@ -126,7 +143,7 @@ function createMockChannel(fixture: (typeof ALL_CHANNELS)[number]): any {
 		...(isText
 			? {
 					// guild stub gives tool handlers access to premiumTier for size-limit calculation
-					guild: { premiumTier: 0 },
+					guild: channelGuildStub,
 					send: async (
 						content: string | { content?: string; embeds?: unknown[]; files?: unknown[] },
 					) => ({
@@ -174,8 +191,8 @@ function createMockChannel(fixture: (typeof ALL_CHANNELS)[number]): any {
 					}),
 					edit: async (_opts: Record<string, unknown>) => {},
 					permissionOverwrites: {
-						create: async (_targetId: string, _options: Record<string, boolean>) => {},
-						delete: async (_targetId: string) => {},
+						create: async (_target: unknown, _options: Record<string, boolean>) => {},
+						delete: async (_target: unknown) => {},
 					},
 					delete: async () => {},
 					setParent: async () => {},
@@ -185,10 +202,11 @@ function createMockChannel(fixture: (typeof ALL_CHANNELS)[number]): any {
 		// Voice channel features
 		...(isVoice
 			? {
+					guild: channelGuildStub,
 					edit: async (_opts: Record<string, unknown>) => {},
 					permissionOverwrites: {
-						create: async (_targetId: string, _options: Record<string, boolean>) => {},
-						delete: async (_targetId: string) => {},
+						create: async (_target: unknown, _options: Record<string, boolean>) => {},
+						delete: async (_target: unknown) => {},
 					},
 					delete: async () => {},
 					setParent: async () => {},
@@ -205,6 +223,7 @@ function createMockChannel(fixture: (typeof ALL_CHANNELS)[number]): any {
 		// Forum channel features
 		...(isForum
 			? {
+					guild: channelGuildStub,
 					threads: {
 						create: async (opts: { name: string; message: { content: string } }) => ({
 							id: `new-forum-post-${Date.now()}`,
@@ -213,8 +232,8 @@ function createMockChannel(fixture: (typeof ALL_CHANNELS)[number]): any {
 					},
 					edit: async (_opts: Record<string, unknown>) => {},
 					permissionOverwrites: {
-						create: async (_targetId: string, _options: Record<string, boolean>) => {},
-						delete: async (_targetId: string) => {},
+						create: async (_target: unknown, _options: Record<string, boolean>) => {},
+						delete: async (_target: unknown) => {},
 					},
 					delete: async () => {},
 					setParent: async () => {},

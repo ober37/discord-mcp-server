@@ -332,7 +332,7 @@ export function registerChannelTools(
 	server.addTool({
 		name: "create_announcement_channel",
 		description:
-			"Create a new announcement channel in a Discord server. Announcement channels let members follow and receive cross-server notifications. Requires Manage Channels permission.",
+			"Create a new announcement channel in a Discord server. Announcement channels let members follow and receive cross-server notifications. Requires Manage Channels permission. Note: the server must have Community mode enabled in Discord Server Settings — creation will fail with 'Invalid form body' on non-Community servers.",
 		parameters: z.object({
 			guildId: z.string().optional().describe("Server ID. Falls back to DISCORD_GUILD_ID env var."),
 			name: z.string().describe("Name for the new announcement channel."),
@@ -361,6 +361,11 @@ export function registerChannelTools(
 		parameters: z.object({
 			channelId: z.string().describe("ID of the channel to modify permissions on."),
 			targetId: z.string().describe("ID of the user or role to set permissions for."),
+			targetType: z
+				.enum(["user", "role"])
+				.describe(
+					"Whether targetId is a 'user' (guild member) or 'role'. Required to correctly resolve the target.",
+				),
 			allow: z
 				.array(z.string())
 				.optional()
@@ -387,10 +392,28 @@ export function registerChannelTools(
 
 				const name = "name" in channel ? channel.name : args.channelId;
 
+				// biome-ignore lint/suspicious/noExplicitAny: permissionOverwrites and guild confirmed present on GuildChannel
+				const guildChannel = channel as any;
+
+				// Resolve the target to a concrete Role or GuildMember object so discord.js
+				// can determine the overwrite type without relying solely on the members cache.
+				let resolvedTarget: unknown;
+				if (args.targetType === "role") {
+					resolvedTarget = guildChannel.guild?.roles?.cache?.get(args.targetId);
+					if (!resolvedTarget) {
+						throw new UserError(`Role ${args.targetId} not found in this server.`);
+					}
+				} else {
+					// Fetch the member from the API — works even when not in the local cache.
+					resolvedTarget = await guildChannel.guild?.members?.fetch(args.targetId);
+					if (!resolvedTarget) {
+						throw new UserError(`User ${args.targetId} is not a member of this server.`);
+					}
+				}
+
 				if (args.deleteOverwrite) {
-					// biome-ignore lint/suspicious/noExplicitAny: permissionOverwrites confirmed present via "in" check above
-					await (channel as any).permissionOverwrites.delete(args.targetId);
-					return `✅ Removed permission overwrite for target ${args.targetId} on channel "${name}" (ID: ${args.channelId})`;
+					await guildChannel.permissionOverwrites.delete(resolvedTarget);
+					return `✅ Removed permission overwrite for ${args.targetType} ${args.targetId} on channel "${name}" (ID: ${args.channelId})`;
 				}
 
 				const allow = args.allow ?? [];
@@ -420,13 +443,12 @@ export function registerChannelTools(
 				for (const perm of allow) permOptions[perm] = true;
 				for (const perm of deny) permOptions[perm] = false;
 
-				// biome-ignore lint/suspicious/noExplicitAny: permissionOverwrites confirmed present via "in" check above
-				await (channel as any).permissionOverwrites.create(args.targetId, permOptions);
+				await guildChannel.permissionOverwrites.create(resolvedTarget, permOptions);
 
 				const allowDesc = allow.length > 0 ? `allow: [${allow.join(", ")}]` : "";
 				const denyDesc = deny.length > 0 ? `deny: [${deny.join(", ")}]` : "";
 				const permsDesc = [allowDesc, denyDesc].filter(Boolean).join(", ");
-				return `✅ Set permissions for target ${args.targetId} on channel "${name}" (ID: ${args.channelId}): ${permsDesc}`;
+				return `✅ Set permissions for ${args.targetType} ${args.targetId} on channel "${name}" (ID: ${args.channelId}): ${permsDesc}`;
 			});
 		},
 	});
