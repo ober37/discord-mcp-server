@@ -3,6 +3,7 @@ import type { Client } from "discord.js";
 import { FastMCP } from "fastmcp";
 import { loadConfig } from "./config.ts";
 import { createDiscordClient } from "./discord.ts";
+import { registerAuditTools } from "./tools/audit.ts";
 import { registerChannelTools } from "./tools/channels.ts";
 import { registerDmTools } from "./tools/dm.ts";
 import { registerEmojiTools } from "./tools/emojis.ts";
@@ -76,6 +77,7 @@ async function main() {
 	registerInviteTools(server, discordClient, guildId);
 	registerEmojiTools(server, discordClient, guildId);
 	registerDmTools(server, discordClient);
+	registerAuditTools(server, discordClient, guildId);
 
 	// Start the server with the configured transport
 	if (config.transport === "stdio") {
@@ -118,6 +120,7 @@ export function createSandboxServer() {
 	registerInviteTools(server, mockClient, undefined);
 	registerEmojiTools(server, mockClient, undefined);
 	registerDmTools(server, mockClient);
+	registerAuditTools(server, mockClient, undefined);
 
 	return server;
 }

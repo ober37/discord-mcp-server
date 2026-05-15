@@ -7,6 +7,7 @@
  */
 
 import {
+	ALL_AUDIT_LOG_ENTRIES,
 	ALL_CHANNELS,
 	ALL_EMOJIS,
 	ALL_INVITES,
@@ -557,6 +558,30 @@ function createMockGuild(): any {
 				name: opts.name,
 				animated: false,
 			}),
+		},
+		fetchAuditLogs: async (opts?: { limit?: number; type?: number; user?: string }) => {
+			let entries = Array.from(ALL_AUDIT_LOG_ENTRIES);
+			if (opts?.type !== undefined) {
+				entries = entries.filter((e) => e.action === opts.type);
+			}
+			if (opts?.user) {
+				entries = entries.filter((e) => e.executorId === opts.user);
+			}
+			const limited = entries.slice(0, opts?.limit ?? 20);
+			return {
+				entries: createCollection(
+					limited.map((e) => [
+						e.id,
+						{
+							action: e.action,
+							executor: { tag: e.executorTag, id: e.executorId },
+							target: { tag: e.targetTag, id: e.targetId },
+							reason: e.reason,
+							createdAt: e.createdAt,
+						},
+					]),
+				),
+			};
 		},
 		fetch: async () => guild,
 		fetchOwner: async () => ({
