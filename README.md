@@ -33,8 +33,9 @@
 | 😀 **Emojis**          | `list_emojis`, `create_emoji`, `delete_emoji`                                                                                                     |
 | 💌 **Direct Messages** | `send_dm`, `read_dm`                                                                                                                              |
 | 📋 **Audit Logs**      | `get_audit_logs`                                                                                                                                   |
+| 📅 **Scheduled Events** | `list_events`, `create_event`, `edit_event`, `delete_event`                                                                                      |
 
-**59 tools** covering the most common Discord operations. Forum posts are supported via `create_thread`.
+**63 tools** covering the most common Discord operations. Forum posts are supported via `create_thread`.
 
 > ✦ `get_member_presence` requires the **Presence Intent** to be enabled in the Discord Developer Portal (see setup steps below). Presence is Gateway-only and cannot be fetched via REST — the tool returns live status after the bot observes the first `presenceUpdate` event for a member.
 
@@ -196,7 +197,8 @@ src/
     ├── members.ts      # Member profile, listing, editing, and presence
     ├── invites.ts      # Invite CRUD (create, list, delete)
     ├── emojis.ts       # Emoji listing, creation, and deletion
-    └── dm.ts           # Direct message send/read
+    ├── dm.ts           # Direct message send/read
+    └── events.ts       # Scheduled event CRUD (list, create, edit, delete)
 ```
 
 ## Contributing

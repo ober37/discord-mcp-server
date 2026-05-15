@@ -436,3 +436,37 @@ export const AUDIT_LOG_ENTRY_BAN = {
 } as const;
 
 export const ALL_AUDIT_LOG_ENTRIES = [AUDIT_LOG_ENTRY_KICK, AUDIT_LOG_ENTRY_BAN] as const;
+
+// ─── Scheduled Events ──────────────────────────────────────────────────────────
+
+export const EVENT_EXTERNAL = {
+	id: "event-0000000000000001",
+	name: "Community Meetup",
+	description: "Monthly community gathering",
+	// GuildScheduledEventEntityType.External = 3
+	entityType: 3,
+	// GuildScheduledEventStatus.Scheduled = 1
+	status: 1,
+	scheduledStartAt: new Date("2026-06-01T18:00:00.000Z"),
+	scheduledEndAt: new Date("2026-06-01T20:00:00.000Z"),
+	entityMetadata: { location: "Central Park, NYC" },
+	channel: null,
+	userCount: 12,
+} as const;
+
+export const EVENT_VOICE = {
+	id: "event-0000000000000002",
+	name: "Game Night",
+	description: null,
+	// GuildScheduledEventEntityType.Voice = 2
+	entityType: 2,
+	// GuildScheduledEventStatus.Active = 2
+	status: 2,
+	scheduledStartAt: new Date("2026-06-15T20:00:00.000Z"),
+	scheduledEndAt: null,
+	entityMetadata: null,
+	channel: { name: "Voice Chat" },
+	userCount: 5,
+} as const;
+
+export const ALL_EVENTS = [EVENT_EXTERNAL, EVENT_VOICE] as const;
