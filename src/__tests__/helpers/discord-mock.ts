@@ -13,6 +13,9 @@ import {
 	ALL_ROLES,
 	BAN_FIXTURE,
 	BOT_USER,
+	DM_MESSAGE_ONE,
+	DM_MESSAGE_TWO,
+	DM_USER,
 	GUILD_FIXTURE,
 	MESSAGE_FROM_BOT,
 	MESSAGE_SIMPLE,
@@ -206,7 +209,17 @@ function createMockChannel(fixture: (typeof ALL_CHANNELS)[number]): any {
 // ─── Message Mock ───────────────────────────────────────────────────────────
 
 function createMockMessage(
-	fixture: typeof MESSAGE_SIMPLE | typeof MESSAGE_WITH_ATTACHMENTS | typeof MESSAGE_FROM_BOT,
+	fixture: {
+		id: string;
+		content: string;
+		// biome-ignore lint/suspicious/noExplicitAny: fixture author shape varies across guild and DM messages
+		author: any;
+		createdAt: Date;
+		createdTimestamp: number;
+		// biome-ignore lint/suspicious/noExplicitAny: collection type is structurally compatible
+		attachments: any;
+		embeds: unknown[];
+	},
 	// biome-ignore lint/suspicious/noExplicitAny: mock factory returns untyped discord.js shape
 ): any {
 	return {
@@ -519,6 +532,26 @@ function createMockGuild(): any {
 	return guild;
 }
 
+// ─── DM Channel Mock ────────────────────────────────────────────────────────
+
+// biome-ignore lint/suspicious/noExplicitAny: mock factory
+function createMockDmChannel(): any {
+	const dmMessages = createCollection([
+		[DM_MESSAGE_ONE.id, createMockMessage(DM_MESSAGE_ONE)],
+		[DM_MESSAGE_TWO.id, createMockMessage(DM_MESSAGE_TWO)],
+	]);
+
+	return {
+		send: async (content: string) => ({
+			id: `new-dm-msg-${Date.now()}`,
+			content,
+		}),
+		messages: {
+			fetch: async (_opts?: { limit?: number }) => dmMessages,
+		},
+	};
+}
+
 // ─── Client Mock ────────────────────────────────────────────────────────────
 
 // biome-ignore lint/suspicious/noExplicitAny: mock factory
@@ -538,6 +571,19 @@ export function createMockDiscordClient(): any {
 
 	const channelMap = new Map(allChannelEntries);
 
+	const dmUserMap = new Map<
+		string,
+		{ createDM: () => Promise<ReturnType<typeof createMockDmChannel>> } & typeof DM_USER
+	>([
+		[
+			DM_USER.id,
+			{
+				...DM_USER,
+				createDM: async () => createMockDmChannel(),
+			},
+		],
+	]);
+
 	return {
 		user: BOT_USER,
 		guilds: {
@@ -548,6 +594,16 @@ export function createMockDiscordClient(): any {
 				const ch = channelMap.get(id);
 				if (!ch) return null;
 				return ch;
+			},
+		},
+		users: {
+			cache: {
+				get: (id: string) => dmUserMap.get(id),
+			},
+			fetch: async (id: string) => {
+				const user = dmUserMap.get(id);
+				if (!user) throw new Error(`Unknown User: ${id}`);
+				return user;
 			},
 		},
 		fetchWebhook: async (id: string, _token?: string) => {

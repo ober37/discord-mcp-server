@@ -356,3 +356,37 @@ export const BAN_FIXTURE = {
 	user: BANNED_USER,
 	reason: "Spamming",
 } as const;
+
+// ─── DM Users ─────────────────────────────────────────────────────────────────
+
+export const DM_USER = {
+	id: "5500000000000001000",
+	tag: "DMUser#4321",
+	username: "DMUser",
+	discriminator: "4321",
+	bot: false,
+} as const;
+
+export const DM_CHANNEL_ID = "dm-channel-5500000000001000000";
+
+export const DM_MESSAGE_ONE = {
+	id: "6600000000001000001",
+	content: "Hey, can you help me?",
+	author: DM_USER,
+	createdAt: new Date("2024-07-01T10:00:00.000Z"),
+	createdTimestamp: new Date("2024-07-01T10:00:00.000Z").getTime(),
+	attachments: createCollection<{ url: string }>(),
+	embeds: [],
+	channelId: DM_CHANNEL_ID,
+};
+
+export const DM_MESSAGE_TWO = {
+	id: "6600000000001000002",
+	content: "Sure, what do you need?",
+	author: BOT_USER,
+	createdAt: new Date("2024-07-01T10:01:00.000Z"),
+	createdTimestamp: new Date("2024-07-01T10:01:00.000Z").getTime(),
+	attachments: createCollection<{ url: string }>(),
+	embeds: [],
+	channelId: DM_CHANNEL_ID,
+};
