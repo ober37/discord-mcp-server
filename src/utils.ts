@@ -1,4 +1,4 @@
-import { type Client, DiscordAPIError, type Guild, type Message } from "discord.js";
+import { type Client, DiscordAPIError, DiscordjsError, type Guild, type Message } from "discord.js";
 import { UserError } from "fastmcp";
 
 /**
@@ -84,6 +84,11 @@ export async function withDiscordErrorHandling<T>(fn: () => Promise<T>): Promise
 				throw new UserError(`Discord API Error: ${friendlyMessage}`);
 			}
 			throw new UserError(`Discord API Error (${error.code}): ${error.message}`);
+		}
+
+		if (error instanceof DiscordjsError) {
+			// Client-side discord.js errors (e.g. InviteNotFound, GuildChannelResolve)
+			throw new UserError(`Discord error: ${error.message}`);
 		}
 
 		if (error instanceof Error) {

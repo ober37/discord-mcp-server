@@ -131,6 +131,19 @@ describe("invite tools", () => {
 			const result = await callTool("list_invites", { guildId: GUILD_FIXTURE.id });
 			expect(result).toBe("No active invites found.");
 		});
+
+		it("throws UserError for unknown channelId", async () => {
+			try {
+				await callTool("list_invites", {
+					channelId: "0000000000000000000",
+					guildId: GUILD_FIXTURE.id,
+				});
+				expect.unreachable("Should have thrown");
+			} catch (e) {
+				expect(e).toBeInstanceOf(UserError);
+				expect((e as UserError).message).toContain("not found in this guild");
+			}
+		});
 	});
 
 	describe("delete_invite", () => {

@@ -11,7 +11,8 @@ export function registerInviteTools(
 ): void {
 	server.addTool({
 		name: "create_invite",
-		description: "Create an invite link for a channel.",
+		description:
+			"Create an invite link for a channel. Requires CREATE_INSTANT_INVITE permission on the channel.",
 		parameters: z.object({
 			channelId: z.string().describe("ID of the channel to create an invite for."),
 			maxAge: z
@@ -60,7 +61,8 @@ export function registerInviteTools(
 
 	server.addTool({
 		name: "list_invites",
-		description: "List all active invites for a guild or a specific channel.",
+		description:
+			"List all active invites for a guild or a specific channel. Requires MANAGE_GUILD (guild-wide) or MANAGE_CHANNELS (per-channel).",
 		parameters: z.object({
 			channelId: z
 				.string()
@@ -71,6 +73,9 @@ export function registerInviteTools(
 		execute: async (args) => {
 			return withDiscordErrorHandling(async () => {
 				const guild = await resolveGuild(client, args.guildId, defaultGuildId);
+				if (args.channelId && !guild.channels.cache.has(args.channelId)) {
+					throw new UserError(`Channel ${args.channelId} not found in this guild.`);
+				}
 				const invites = args.channelId
 					? await guild.invites.fetch({ channelId: args.channelId })
 					: await guild.invites.fetch();
@@ -92,7 +97,7 @@ export function registerInviteTools(
 
 	server.addTool({
 		name: "delete_invite",
-		description: "Revoke an invite by its code.",
+		description: "Revoke an invite by its code. Requires MANAGE_GUILD permission.",
 		parameters: z.object({
 			code: z
 				.string()
