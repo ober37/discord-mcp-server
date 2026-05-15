@@ -408,3 +408,31 @@ export const DM_MESSAGE_TWO = {
 	embeds: [],
 	channelId: DM_CHANNEL_ID,
 };
+
+// ─── Audit Logs ────────────────────────────────────────────────────────────────
+
+export const AUDIT_LOG_ENTRY_KICK = {
+	id: "audit-log-000000001",
+	action: 20, // AuditLogEvent.MemberKick
+	actionName: "MemberKick",
+	executorTag: REGULAR_USER.tag,
+	executorId: REGULAR_USER.id,
+	targetTag: ANOTHER_USER.tag,
+	targetId: ANOTHER_USER.id,
+	reason: "Spam",
+	createdAt: new Date("2024-06-15T15:00:00.000Z"),
+} as const;
+
+export const AUDIT_LOG_ENTRY_BAN = {
+	id: "audit-log-000000002",
+	action: 22, // AuditLogEvent.MemberBanAdd
+	actionName: "MemberBanAdd",
+	executorTag: BOT_USER.tag,
+	executorId: BOT_USER.id,
+	targetTag: BANNED_USER.tag,
+	targetId: BANNED_USER.id,
+	reason: "Spamming",
+	createdAt: new Date("2024-06-16T10:00:00.000Z"),
+} as const;
+
+export const ALL_AUDIT_LOG_ENTRIES = [AUDIT_LOG_ENTRY_KICK, AUDIT_LOG_ENTRY_BAN] as const;
