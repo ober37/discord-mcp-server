@@ -7,6 +7,7 @@ import { registerAuditTools } from "./tools/audit.ts";
 import { registerChannelTools } from "./tools/channels.ts";
 import { registerDmTools } from "./tools/dm.ts";
 import { registerEmojiTools } from "./tools/emojis.ts";
+import { registerEventTools } from "./tools/events.ts";
 import { registerInviteTools } from "./tools/invites.ts";
 import { type PresenceData, registerMemberTools } from "./tools/members.ts";
 import { registerMessageTools } from "./tools/messages.ts";
@@ -78,6 +79,7 @@ async function main() {
 	registerEmojiTools(server, discordClient, guildId);
 	registerDmTools(server, discordClient);
 	registerAuditTools(server, discordClient, guildId);
+	registerEventTools(server, discordClient, guildId);
 
 	// Start the server with the configured transport
 	if (config.transport === "stdio") {
@@ -121,6 +123,7 @@ export function createSandboxServer() {
 	registerEmojiTools(server, mockClient, undefined);
 	registerDmTools(server, mockClient);
 	registerAuditTools(server, mockClient, undefined);
+	registerEventTools(server, mockClient, undefined);
 
 	return server;
 }

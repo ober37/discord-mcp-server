@@ -384,7 +384,7 @@ Current intents in `src/discord.ts`:
 | `GuildWebhooks` | ✅ enabled | webhook tools |
 | `GuildBans` | ✅ enabled | `kick_member`, `ban_member`, `unban_member`, `list_bans`, `timeout_member` |
 | `GuildInvites` | ✅ enabled | invite tools (`create_invite`, `list_invites`, `delete_invite`) |
-| `GuildScheduledEvents` | 🔜 needed | events tools (future) |
+| `GuildScheduledEvents` | ✅ enabled | `list_events`, `create_event`, `edit_event`, `delete_event` |
 | `GuildPresence` | ✅ enabled | `get_member_presence` (privileged — requires Developer Portal toggle; data cached from `presenceUpdate` Gateway events) |
 | `DirectMessages` | ✅ enabled | `send_dm`, `read_dm` |
 

@@ -10,6 +10,7 @@ import {
 	ALL_AUDIT_LOG_ENTRIES,
 	ALL_CHANNELS,
 	ALL_EMOJIS,
+	ALL_EVENTS,
 	ALL_INVITES,
 	ALL_MEMBER_FIXTURES,
 	ALL_ROLES,
@@ -408,6 +409,29 @@ function createMockMember(fixture: (typeof ALL_MEMBER_FIXTURES)[number]): any {
 	};
 }
 
+// ─── Scheduled Event Mock ───────────────────────────────────────────────────
+
+// biome-ignore lint/suspicious/noExplicitAny: mock factory
+function createMockEvent(fixture: (typeof ALL_EVENTS)[number]): any {
+	return {
+		id: fixture.id,
+		name: fixture.name,
+		description: fixture.description,
+		entityType: fixture.entityType,
+		status: fixture.status,
+		scheduledStartAt: fixture.scheduledStartAt,
+		scheduledEndAt: fixture.scheduledEndAt ?? null,
+		entityMetadata: fixture.entityMetadata ?? null,
+		channel: fixture.channel ?? null,
+		userCount: fixture.userCount,
+		edit: async (opts: Record<string, unknown>) => ({
+			...fixture,
+			...opts,
+		}),
+		delete: async () => {},
+	};
+}
+
 // ─── Guild Mock ─────────────────────────────────────────────────────────────
 
 // biome-ignore lint/suspicious/noExplicitAny: mock factory
@@ -557,6 +581,23 @@ function createMockGuild(): any {
 				id: `new-emoji-${Date.now()}`,
 				name: opts.name,
 				animated: false,
+			}),
+		},
+		scheduledEvents: {
+			fetch: async (id?: string) => {
+				if (typeof id === "string") {
+					const found = ALL_EVENTS.find((e) => e.id === id);
+					if (!found) throw new Error(`Unknown Guild Scheduled Event: ${id}`);
+					return createMockEvent(found);
+				}
+				return createCollection(
+					ALL_EVENTS.map((e) => [e.id, createMockEvent(e)] as [string, unknown]),
+				);
+			},
+			create: async (opts: { name: string; scheduledStartTime: Date; entityType: number }) => ({
+				id: `new-event-${Date.now()}`,
+				name: opts.name,
+				scheduledStartAt: opts.scheduledStartTime,
 			}),
 		},
 		fetchAuditLogs: async (opts?: { limit?: number; type?: number; user?: string }) => {
