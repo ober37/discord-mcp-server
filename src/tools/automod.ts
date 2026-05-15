@@ -146,24 +146,24 @@ function formatRule(rule: any): string {
 		.join(", ");
 
 	const meta: string[] = [];
-	if (rule.triggerMetadata.keywordFilter?.length) {
+	if (rule.triggerMetadata?.keywordFilter?.length) {
 		meta.push(`keywords: ${rule.triggerMetadata.keywordFilter.length}`);
 	}
-	if (rule.triggerMetadata.regexPatterns?.length) {
+	if (rule.triggerMetadata?.regexPatterns?.length) {
 		meta.push(`regex: ${rule.triggerMetadata.regexPatterns.length}`);
 	}
-	if (rule.triggerMetadata.presets?.length) {
+	if (rule.triggerMetadata?.presets?.length) {
 		meta.push(
 			`presets: ${rule.triggerMetadata.presets.map((p: number) => PRESET_LABEL[p] ?? p).join(", ")}`,
 		);
 	}
 	if (
-		rule.triggerMetadata.mentionTotalLimit !== null &&
-		rule.triggerMetadata.mentionTotalLimit !== undefined
+		rule.triggerMetadata?.mentionTotalLimit !== null &&
+		rule.triggerMetadata?.mentionTotalLimit !== undefined
 	) {
 		meta.push(`mention limit: ${rule.triggerMetadata.mentionTotalLimit}`);
 	}
-	if (rule.triggerMetadata.allowList?.length) {
+	if (rule.triggerMetadata?.allowList?.length) {
 		meta.push(`allow list: ${rule.triggerMetadata.allowList.length}`);
 	}
 
@@ -179,7 +179,7 @@ export function registerAutomodTools(
 	server.addTool({
 		name: "list_automod_rules",
 		description:
-			"List all auto-moderation rules in a guild, including trigger type, actions, and enabled state.",
+			"List all auto-moderation rules in a guild, including trigger type, actions, and enabled state. Requires MANAGE_GUILD permission.",
 		parameters: z.object({
 			guildId: z.string().optional().describe("Server ID. Falls back to DISCORD_GUILD_ID env var."),
 		}),
@@ -383,7 +383,7 @@ export function registerAutomodTools(
 			return withDiscordErrorHandling(async () => {
 				const guild = await resolveGuild(client, args.guildId, defaultGuildId);
 				await guild.autoModerationRules.delete(args.ruleId, args.reason);
-				return `✅ Auto-moderation rule ${args.ruleId} deleted.`;
+				return `✅ Auto-moderation rule "${args.ruleId}" deleted.`;
 			});
 		},
 	});

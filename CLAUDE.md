@@ -46,6 +46,7 @@ src/
     server-info.ts  # registerServerInfoTools()
     threads.ts      # registerThreadTools()
     webhooks.ts     # registerWebhookTools()
+    automod.ts      # registerAutomodTools()
   __tests__/
     helpers/
       discord-mock.ts   # createMockDiscordClient() — Map-backed mock guild/channel/member

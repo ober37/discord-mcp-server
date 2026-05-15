@@ -255,6 +255,26 @@ describe("automod tools", () => {
 			// biome-ignore lint/suspicious/noExplicitAny: spy call args are untyped
 			expect((createSpy.mock.calls as any[][])[0][0].triggerMetadata).toBeUndefined();
 		});
+
+		it("throws UserError when rule creation fails (e.g. guild limit reached)", async () => {
+			const guild = client.guilds.cache.get(GUILD_FIXTURE.id);
+			guild.autoModerationRules.create = async () => {
+				throw new Error("Maximum number of auto-moderation rules reached");
+			};
+
+			try {
+				await callTool("create_automod_rule", {
+					guildId: GUILD_FIXTURE.id,
+					name: "Over Limit Rule",
+					triggerType: "keyword",
+					keywords: ["word"],
+					actions: [{ type: "block_message" }],
+				});
+				expect.unreachable("Should have thrown");
+			} catch (e) {
+				expect(e).toBeInstanceOf(UserError);
+			}
+		});
 	});
 
 	// ─── edit_automod_rule ─────────────────────────────────────────────────────
