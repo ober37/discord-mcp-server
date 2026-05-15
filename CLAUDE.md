@@ -387,5 +387,6 @@ Current intents in `src/discord.ts`:
 | `GuildScheduledEvents` | ✅ enabled | `list_events`, `create_event`, `edit_event`, `delete_event` |
 | `GuildPresence` | ✅ enabled | `get_member_presence` (privileged — requires Developer Portal toggle; data cached from `presenceUpdate` Gateway events) |
 | `DirectMessages` | ✅ enabled | `send_dm`, `read_dm` |
+| `AutoModerationConfiguration` | ✅ enabled | automod tools (`list_automod_rules`, `create_automod_rule`, `edit_automod_rule`, `delete_automod_rule`) |
 
 When adding a new intent, update both `src/discord.ts` and this table.

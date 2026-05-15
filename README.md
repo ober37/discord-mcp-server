@@ -35,8 +35,9 @@
 | 📋 **Audit Logs**      | `get_audit_logs`                                                                                                                                   |
 | 📅 **Scheduled Events** | `list_events`, `create_event`, `edit_event`, `delete_event`                                                                                      |
 | ⚡ **App Commands**     | `list_slash_commands`, `delete_slash_command`                                                                                                     |
+| 🛡️ **Auto-Moderation** | `list_automod_rules`, `create_automod_rule`, `edit_automod_rule`, `delete_automod_rule`                                                           |
 
-**65 tools** covering the most common Discord operations. Forum posts are supported via `create_thread`.
+**69 tools** covering the most common Discord operations. Forum posts are supported via `create_thread`.
 
 > ✦ `get_member_presence` requires the **Presence Intent** to be enabled in the Discord Developer Portal (see setup steps below). Presence is Gateway-only and cannot be fetched via REST — the tool returns live status after the bot observes the first `presenceUpdate` event for a member.
 

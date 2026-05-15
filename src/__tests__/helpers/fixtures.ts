@@ -486,3 +486,62 @@ export const COMMAND_INFO = {
 } as const;
 
 export const ALL_COMMANDS = [COMMAND_PING, COMMAND_INFO] as const;
+
+// ─── Auto-Moderation Rules ─────────────────────────────────────────────────────
+
+export const AUTOMOD_RULE_KEYWORD = {
+	id: "automod-000000000000001",
+	name: "Block slurs",
+	// AutoModerationRuleTriggerType.Keyword = 1
+	triggerType: 1,
+	// AutoModerationRuleEventType.MessageSend = 1
+	eventType: 1,
+	triggerMetadata: {
+		keywordFilter: ["badword", "worse*"],
+		regexPatterns: [],
+		presets: [],
+		allowList: ["badword-allowed"],
+		mentionTotalLimit: null,
+		mentionRaidProtectionEnabled: false,
+	},
+	// AutoModerationActionType.BlockMessage = 1
+	actions: [
+		{
+			type: 1,
+			metadata: {
+				customMessage: "That word is not allowed.",
+				channelId: null,
+				durationSeconds: null,
+			},
+		},
+	],
+	enabled: true,
+	exemptRoles: new Map(),
+	exemptChannels: new Map(),
+	creatorId: BOT_USER.id,
+} as const;
+
+export const AUTOMOD_RULE_SPAM = {
+	id: "automod-000000000000002",
+	name: "Anti-spam",
+	// AutoModerationRuleTriggerType.Spam = 3
+	triggerType: 3,
+	// AutoModerationRuleEventType.MessageSend = 1
+	eventType: 1,
+	triggerMetadata: {
+		keywordFilter: [],
+		regexPatterns: [],
+		presets: [],
+		allowList: [],
+		mentionTotalLimit: null,
+		mentionRaidProtectionEnabled: false,
+	},
+	// AutoModerationActionType.BlockMessage = 1
+	actions: [{ type: 1, metadata: { customMessage: null, channelId: null, durationSeconds: null } }],
+	enabled: false,
+	exemptRoles: new Map(),
+	exemptChannels: new Map(),
+	creatorId: BOT_USER.id,
+} as const;
+
+export const ALL_AUTOMOD_RULES = [AUTOMOD_RULE_KEYWORD, AUTOMOD_RULE_SPAM] as const;
