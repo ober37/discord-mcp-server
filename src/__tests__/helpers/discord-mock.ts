@@ -172,6 +172,11 @@ function createMockChannel(fixture: (typeof ALL_CHANNELS)[number]): any {
 						uses: 0,
 						temporary: opts.temporary ?? false,
 					}),
+					edit: async (_opts: Record<string, unknown>) => {},
+					permissionOverwrites: {
+						create: async (_targetId: string, _options: Record<string, boolean>) => {},
+						delete: async (_targetId: string) => {},
+					},
 					delete: async () => {},
 					setParent: async () => {},
 				}
@@ -180,6 +185,11 @@ function createMockChannel(fixture: (typeof ALL_CHANNELS)[number]): any {
 		// Voice channel features
 		...(isVoice
 			? {
+					edit: async (_opts: Record<string, unknown>) => {},
+					permissionOverwrites: {
+						create: async (_targetId: string, _options: Record<string, boolean>) => {},
+						delete: async (_targetId: string) => {},
+					},
 					delete: async () => {},
 					setParent: async () => {},
 				}
@@ -200,6 +210,11 @@ function createMockChannel(fixture: (typeof ALL_CHANNELS)[number]): any {
 							id: `new-forum-post-${Date.now()}`,
 							name: opts.name,
 						}),
+					},
+					edit: async (_opts: Record<string, unknown>) => {},
+					permissionOverwrites: {
+						create: async (_targetId: string, _options: Record<string, boolean>) => {},
+						delete: async (_targetId: string) => {},
 					},
 					delete: async () => {},
 					setParent: async () => {},
