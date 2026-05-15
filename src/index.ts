@@ -4,6 +4,7 @@ import { FastMCP } from "fastmcp";
 import { loadConfig } from "./config.ts";
 import { createDiscordClient } from "./discord.ts";
 import { registerAuditTools } from "./tools/audit.ts";
+import { registerAutomodTools } from "./tools/automod.ts";
 import { registerChannelTools } from "./tools/channels.ts";
 import { registerCommandTools } from "./tools/commands.ts";
 import { registerDmTools } from "./tools/dm.ts";
@@ -80,6 +81,7 @@ async function main() {
 	registerEmojiTools(server, discordClient, guildId);
 	registerDmTools(server, discordClient);
 	registerAuditTools(server, discordClient, guildId);
+	registerAutomodTools(server, discordClient, guildId);
 	registerEventTools(server, discordClient, guildId);
 	registerCommandTools(server, discordClient, guildId);
 
@@ -125,6 +127,7 @@ export function createSandboxServer() {
 	registerEmojiTools(server, mockClient, undefined);
 	registerDmTools(server, mockClient);
 	registerAuditTools(server, mockClient, undefined);
+	registerAutomodTools(server, mockClient, undefined);
 	registerEventTools(server, mockClient, undefined);
 	registerCommandTools(server, mockClient, undefined);
 

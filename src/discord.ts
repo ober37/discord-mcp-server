@@ -17,6 +17,7 @@ export async function createDiscordClient(token: string): Promise<Client> {
 			GatewayIntentBits.GuildBans,
 			GatewayIntentBits.GuildScheduledEvents,
 			GatewayIntentBits.DirectMessages,
+			GatewayIntentBits.AutoModerationConfiguration,
 		],
 	});
 

@@ -8,6 +8,7 @@
 
 import {
 	ALL_AUDIT_LOG_ENTRIES,
+	ALL_AUTOMOD_RULES,
 	ALL_CHANNELS,
 	ALL_COMMANDS,
 	ALL_EMOJIS,
@@ -471,6 +472,26 @@ function createMockEvent(fixture: (typeof ALL_EVENTS)[number]): any {
 	};
 }
 
+// ─── AutoMod Rule Mock ──────────────────────────────────────────────────────
+
+// biome-ignore lint/suspicious/noExplicitAny: mock factory
+function createMockAutomodRule(fixture: (typeof ALL_AUTOMOD_RULES)[number]): any {
+	return {
+		id: fixture.id,
+		name: fixture.name,
+		triggerType: fixture.triggerType,
+		eventType: fixture.eventType,
+		triggerMetadata: { ...fixture.triggerMetadata },
+		actions: fixture.actions.map((a) => ({ ...a })),
+		enabled: fixture.enabled,
+		exemptRoles: createCollection([]),
+		exemptChannels: createCollection([]),
+		creatorId: fixture.creatorId,
+		edit: async (opts: Record<string, unknown>) => ({ ...createMockAutomodRule(fixture), ...opts }),
+		delete: async () => {},
+	};
+}
+
 // ─── Guild Mock ─────────────────────────────────────────────────────────────
 
 // biome-ignore lint/suspicious/noExplicitAny: mock factory
@@ -652,6 +673,46 @@ function createMockGuild(): any {
 				const found = ALL_COMMANDS.find((c) => c.id === commandId);
 				if (!found) throw new Error(`Unknown Application Command: ${commandId}`);
 			},
+		},
+		autoModerationRules: {
+			fetch: async (id?: string) => {
+				if (typeof id === "string") {
+					const found = ALL_AUTOMOD_RULES.find((r) => r.id === id);
+					if (!found) throw new Error("Unknown AutoModerationRule");
+					return createMockAutomodRule(found);
+				}
+				return createCollection(
+					ALL_AUTOMOD_RULES.map((r) => [r.id, createMockAutomodRule(r)] as [string, unknown]),
+				);
+			},
+			create: async (opts: { name: string }) => ({
+				id: `new-automod-rule-${Date.now()}`,
+				name: opts.name,
+				triggerType: 1,
+				eventType: 1,
+				triggerMetadata: {
+					keywordFilter: [],
+					regexPatterns: [],
+					presets: [],
+					allowList: [],
+					mentionTotalLimit: null,
+					mentionRaidProtectionEnabled: false,
+				},
+				actions: [],
+				enabled: true,
+				exemptRoles: createCollection([]),
+				exemptChannels: createCollection([]),
+			}),
+			edit: async (ruleId: string, opts: Record<string, unknown>) => {
+				const found = ALL_AUTOMOD_RULES.find((r) => r.id === ruleId);
+				if (!found) throw new Error("Unknown AutoModerationRule");
+				return { ...createMockAutomodRule(found), ...opts };
+			},
+			delete: async (ruleId: string) => {
+				const found = ALL_AUTOMOD_RULES.find((r) => r.id === ruleId);
+				if (!found) throw new Error("Unknown AutoModerationRule");
+			},
+			resolveId: (rule: string | { id: string }) => (typeof rule === "string" ? rule : rule?.id),
 		},
 		fetchAuditLogs: async (opts?: { limit?: number; type?: number; user?: string }) => {
 			let entries = Array.from(ALL_AUDIT_LOG_ENTRIES);
