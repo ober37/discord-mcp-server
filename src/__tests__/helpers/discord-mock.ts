@@ -441,6 +441,10 @@ function createMockMember(fixture: (typeof ALL_MEMBER_FIXTURES)[number]): any {
 		timeout: async (_duration: number | null, _reason?: string) => {},
 		kickable: true,
 		moderatable: true,
+		voice: {
+			channelId: null as string | null,
+			setChannel: async (_channelId: string | null) => {},
+		},
 	};
 }
 

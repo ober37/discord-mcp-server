@@ -454,6 +454,62 @@ export function registerChannelTools(
 	});
 
 	server.addTool({
+		name: "move_member_to_voice",
+		description:
+			"Move a guild member to a different voice channel. The member must currently be connected to a voice channel. Requires MOVE_MEMBERS permission.",
+		parameters: z.object({
+			guildId: z.string().optional().describe("Server ID. Falls back to DISCORD_GUILD_ID env var."),
+			userId: z.string().describe("ID of the member to move."),
+			channelId: z.string().describe("ID of the voice channel to move the member into."),
+		}),
+		execute: async (args) => {
+			return withDiscordErrorHandling(async () => {
+				const guild = await resolveGuild(client, args.guildId, defaultGuildId);
+				const member = await guild.members.fetch(args.userId);
+
+				const channel = await client.channels.fetch(args.channelId);
+				if (!channel) {
+					throw new UserError(`Channel ${args.channelId} not found.`);
+				}
+				if (
+					channel.type !== ChannelType.GuildVoice &&
+					channel.type !== ChannelType.GuildStageVoice
+				) {
+					throw new UserError(
+						`Channel ${args.channelId} is not a voice channel. Only GuildVoice and GuildStageVoice channels are valid targets.`,
+					);
+				}
+
+				await member.voice.setChannel(args.channelId);
+				const channelName = "name" in channel ? channel.name : args.channelId;
+				return `✅ Moved ${member.user.username} to voice channel "${channelName}" (ID: ${args.channelId})`;
+			});
+		},
+	});
+
+	server.addTool({
+		name: "disconnect_member_from_voice",
+		description:
+			"Disconnect a guild member from the voice channel they are currently in. Requires MOVE_MEMBERS permission.",
+		parameters: z.object({
+			guildId: z.string().optional().describe("Server ID. Falls back to DISCORD_GUILD_ID env var."),
+			userId: z.string().describe("ID of the member to disconnect from voice."),
+		}),
+		execute: async (args) => {
+			return withDiscordErrorHandling(async () => {
+				const guild = await resolveGuild(client, args.guildId, defaultGuildId);
+				const member = await guild.members.fetch(args.userId);
+
+				// member.voice.channelId relies on the GuildVoiceStates Gateway cache and is
+				// unreliable when that intent is not enabled. Let the Discord API enforce the
+				// "must be in voice" constraint — error 40032 is mapped to a friendly message.
+				await member.voice.setChannel(null);
+				return `✅ Disconnected ${member.user.username} from voice`;
+			});
+		},
+	});
+
+	server.addTool({
 		name: "move_channel",
 		description:
 			"Move a channel into a category. Use this to organize channels under category groups.",

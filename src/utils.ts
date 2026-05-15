@@ -68,6 +68,7 @@ const DISCORD_ERROR_MAP: Record<number, string> = {
 	10014: "Unknown emoji. The emoji may have been deleted or does not exist in this server.",
 	10063: "Unknown application command. The command may have been deleted or does not exist.",
 	10070: "Unknown scheduled event. The event may have been deleted or does not exist.",
+	40032: "Target user is not connected to voice.",
 };
 
 /**
