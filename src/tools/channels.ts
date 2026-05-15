@@ -500,12 +500,9 @@ export function registerChannelTools(
 				const guild = await resolveGuild(client, args.guildId, defaultGuildId);
 				const member = await guild.members.fetch(args.userId);
 
-				if (!member.voice.channelId) {
-					throw new UserError(
-						`Member ${member.user.username} is not currently in a voice channel.`,
-					);
-				}
-
+				// member.voice.channelId relies on the GuildVoiceStates Gateway cache and is
+				// unreliable when that intent is not enabled. Let the Discord API enforce the
+				// "must be in voice" constraint — error 40032 is mapped to a friendly message.
 				await member.voice.setChannel(null);
 				return `✅ Disconnected ${member.user.username} from voice`;
 			});

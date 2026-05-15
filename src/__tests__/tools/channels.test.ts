@@ -607,7 +607,6 @@ describe("channel tools", () => {
 		it("disconnects a member from voice", async () => {
 			const guild = client.guilds.cache.get(GUILD_FIXTURE.id);
 			const member = guild.members.cache.get(MEMBER_ONE_FIXTURE.id);
-			member.voice.channelId = CHANNEL_VOICE.id;
 			const setChannelSpy = mock((_channelId: string | null) => Promise.resolve());
 			member.voice.setChannel = setChannelSpy;
 
@@ -620,13 +619,19 @@ describe("channel tools", () => {
 			expect(result).toContain(REGULAR_USER.username);
 			expect(setChannelSpy).toHaveBeenCalledTimes(1);
 			expect(setChannelSpy).toHaveBeenCalledWith(null);
-
-			// reset for other tests
-			member.voice.channelId = null;
 		});
 
-		it("throws UserError when member is not in a voice channel", async () => {
-			// Default mock has voice.channelId = null
+		it("throws UserError when member is not in a voice channel (Discord API error 40032)", async () => {
+			// GuildVoiceStates intent is not enabled so member.voice.channelId is always
+			// null after a REST fetch. The tool delegates enforcement to Discord — error
+			// 40032 ("Target user is not connected to voice") surfaces as a UserError.
+			const guild = client.guilds.cache.get(GUILD_FIXTURE.id);
+			const member = guild.members.cache.get(MEMBER_ONE_FIXTURE.id);
+			const discordError = Object.assign(new Error("Target user is not connected to voice"), {
+				code: 40032,
+			});
+			member.voice.setChannel = mock(() => Promise.reject(discordError));
+
 			try {
 				await callTool("disconnect_member_from_voice", {
 					guildId: GUILD_FIXTURE.id,
@@ -635,6 +640,7 @@ describe("channel tools", () => {
 				expect.unreachable("Should have thrown");
 			} catch (e) {
 				expect(e).toBeInstanceOf(UserError);
+				expect((e as UserError).message).toContain("not connected to voice");
 			}
 		});
 
