@@ -386,5 +386,6 @@ Current intents in `src/discord.ts`:
 | `GuildInvites` | ✅ enabled | invite tools (`create_invite`, `list_invites`, `delete_invite`) |
 | `GuildScheduledEvents` | 🔜 needed | events tools (future) |
 | `GuildPresence` | ✅ enabled | `get_member_presence` (privileged — requires Developer Portal toggle; data cached from `presenceUpdate` Gateway events) |
+| `DirectMessages` | ✅ enabled | `send_dm`, `read_dm` |
 
 When adding a new intent, update both `src/discord.ts` and this table.

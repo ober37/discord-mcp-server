@@ -30,8 +30,9 @@
 | 🧵 **Threads**     | `list_threads`, `create_thread`, `reply_to_thread`, `get_thread`, `archive_thread`, `lock_thread`, `add_thread_member`, `remove_thread_member`         |
 | 👤 **Members**     | `get_member`, `list_members`, `edit_member`, `get_member_presence`, `kick_member`, `ban_member`, `unban_member`, `list_bans`, `timeout_member` |
 | 📨 **Invites**     | `create_invite`, `list_invites`, `delete_invite`                                                                                                       |
+| 💌 **Direct Messages** | `send_dm`, `read_dm`                                                                                                                              |
 
-**53 tools** covering the most common Discord operations. Forum posts are supported via `create_thread`.
+**55 tools** covering the most common Discord operations. Forum posts are supported via `create_thread`.
 
 > ✦ `get_member_presence` requires the **Presence Intent** to be enabled in the Discord Developer Portal (see setup steps below). Presence is Gateway-only and cannot be fetched via REST — the tool returns live status after the bot observes the first `presenceUpdate` event for a member.
 
@@ -191,7 +192,8 @@ src/
     ├── roles.ts        # Role CRUD + assignment
     ├── threads.ts      # Thread & forum operations
     ├── members.ts      # Member profile, listing, editing, and presence
-    └── invites.ts      # Invite CRUD (create, list, delete)
+    ├── invites.ts      # Invite CRUD (create, list, delete)
+    └── dm.ts           # Direct message send/read
 ```
 
 ## Contributing
