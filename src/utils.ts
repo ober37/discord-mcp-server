@@ -65,6 +65,7 @@ const DISCORD_ERROR_MAP: Record<number, string> = {
 	10006: "Unknown invite. The invite may have expired or already been revoked.",
 	10007: "Unknown member. The user is not a member of this guild.",
 	10026: "Unknown ban. This user does not have an active ban in this guild.",
+	10014: "Unknown emoji. The emoji may have been deleted or does not exist in this server.",
 };
 
 /**

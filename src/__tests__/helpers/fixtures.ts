@@ -357,6 +357,24 @@ export const BAN_FIXTURE = {
 	reason: "Spamming",
 } as const;
 
+// ─── Emojis ──────────────────────────────────────────────────────────────────
+
+export const EMOJI_WAVE = {
+	id: "9980000000000000001",
+	name: "wave",
+	animated: false,
+	guildId: GUILD_FIXTURE.id,
+} as const;
+
+export const EMOJI_DANCE = {
+	id: "9980000000000000002",
+	name: "dance",
+	animated: true,
+	guildId: GUILD_FIXTURE.id,
+} as const;
+
+export const ALL_EMOJIS = [EMOJI_WAVE, EMOJI_DANCE] as const;
+
 // ─── DM Users ─────────────────────────────────────────────────────────────────
 
 export const DM_USER = {
