@@ -23,7 +23,7 @@
 | Category           | Tools                                                                                                                                                  |
 | ------------------ | ------------------------------------------------------------------------------------------------------------------------------------------------------ |
 | 🏠 **Server Info** | `list_servers`, `get_server_info`                                                                                                                      |
-| 📢 **Channels**    | `list_channels`, `find_channel`, `create_text_channel`, `create_voice_channel`, `delete_channel`, `create_category`, `list_categories`, `move_channel` |
+| 📢 **Channels**    | `list_channels`, `find_channel`, `create_text_channel`, `create_voice_channel`, `create_forum_channel`, `create_announcement_channel`, `delete_channel`, `create_category`, `list_categories`, `move_channel`, `edit_channel`, `set_channel_permissions` |
 | 💬 **Messages**    | `send_message`, `read_messages`, `edit_message`, `delete_message`, `add_reaction`, `remove_reaction`, `bulk_delete_messages`, `pin_message`, `unpin_message`, `get_pinned_messages`, `get_reactions`, `clear_reactions` |
 | 🔗 **Webhooks**    | `list_webhooks`, `create_webhook`, `delete_webhook`, `send_webhook_message`, `edit_webhook`                                                            |
 | 🎭 **Roles**       | `list_roles`, `create_role`, `edit_role`, `delete_role`, `assign_role`, `remove_role`                                                                  |
