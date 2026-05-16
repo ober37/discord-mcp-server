@@ -264,7 +264,10 @@ export function registerAutomodTools(
 				.describe("Automatically detect mention raids. Used with: mention_spam."),
 			actions: z
 				.array(actionSchema)
-				.describe("One or more actions to execute when the rule triggers."),
+				.min(1)
+				.describe(
+					"One or more actions to execute when the rule triggers. At least one action is required.",
+				),
 			exemptRoleIds: z
 				.array(z.string())
 				.optional()
@@ -342,7 +345,11 @@ export function registerAutomodTools(
 				.boolean()
 				.optional()
 				.describe("Update mention raid protection toggle. Used with: mention_spam."),
-			actions: z.array(actionSchema).optional().describe("Replaces the full actions list."),
+			actions: z
+				.array(actionSchema)
+				.min(1)
+				.optional()
+				.describe("Replaces the full actions list. If provided, must contain at least one action."),
 			exemptRoleIds: z
 				.array(z.string())
 				.optional()

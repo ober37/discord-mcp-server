@@ -162,13 +162,14 @@ describe("message tools", () => {
 			expect(editSpy).toHaveBeenCalledTimes(1);
 		});
 
-		it("refuses to edit non-bot message", async () => {
-			const result = await callTool("edit_message", {
-				channelId: CHANNEL_GENERAL.id,
-				messageId: MESSAGE_SIMPLE.id,
-				newMessage: "Trying to edit",
-			});
-			expect(result).toContain("Cannot edit messages from other users");
+		it("throws UserError when trying to edit a non-bot message", async () => {
+			await expect(
+				callTool("edit_message", {
+					channelId: CHANNEL_GENERAL.id,
+					messageId: MESSAGE_SIMPLE.id,
+					newMessage: "Trying to edit",
+				}),
+			).rejects.toBeInstanceOf(UserError);
 		});
 
 		it("throws UserError for voice channelId", async () => {

@@ -405,11 +405,9 @@ export function registerChannelTools(
 						throw new UserError(`Role ${args.targetId} not found in this server.`);
 					}
 				} else {
-					// Fetch the member from the API — works even when not in the local cache.
+					// Fetch the member from the API — throws on miss (mapped to Discord error
+					// 10007 by withDiscordErrorHandling). Always returns a member on success.
 					resolvedTarget = await guildChannel.guild?.members?.fetch(args.targetId);
-					if (!resolvedTarget) {
-						throw new UserError(`User ${args.targetId} is not a member of this server.`);
-					}
 				}
 
 				if (args.deleteOverwrite) {

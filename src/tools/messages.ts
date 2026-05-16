@@ -121,7 +121,9 @@ export function registerMessageTools(
 
 				const message = await (channel as TextChannel).messages.fetch(args.messageId);
 				if (message.author.id !== client.user?.id) {
-					return "Cannot edit messages from other users. The bot can only edit its own messages.";
+					throw new UserError(
+						"Cannot edit messages from other users. The bot can only edit its own messages.",
+					);
 				}
 
 				await message.edit(args.newMessage);

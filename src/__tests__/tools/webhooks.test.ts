@@ -1,4 +1,5 @@
 import { beforeEach, describe, expect, it, mock } from "bun:test";
+import { UserError } from "fastmcp";
 import { registerWebhookTools } from "../../tools/webhooks";
 import { createMockDiscordClient } from "../helpers/discord-mock";
 import {
@@ -30,9 +31,10 @@ describe("webhook tools", () => {
 			expect(result).toContain(`ID: ${WEBHOOK_GITHUB.id}`);
 		});
 
-		it("returns does-not-support-webhooks for voice channel", async () => {
-			const result = await callTool("list_webhooks", { channelId: CHANNEL_VOICE.id });
-			expect(result).toContain("does not support webhooks");
+		it("throws UserError for voice channel (does not support webhooks)", async () => {
+			await expect(
+				callTool("list_webhooks", { channelId: CHANNEL_VOICE.id }),
+			).rejects.toBeInstanceOf(UserError);
 		});
 	});
 
@@ -48,12 +50,13 @@ describe("webhook tools", () => {
 			expect(result).toContain("URL:");
 		});
 
-		it("returns does-not-support-webhooks for voice channel", async () => {
-			const result = await callTool("create_webhook", {
-				channelId: CHANNEL_VOICE.id,
-				name: "Test",
-			});
-			expect(result).toContain("does not support webhooks");
+		it("throws UserError for voice channel (does not support webhooks)", async () => {
+			await expect(
+				callTool("create_webhook", {
+					channelId: CHANNEL_VOICE.id,
+					name: "Test",
+				}),
+			).rejects.toBeInstanceOf(UserError);
 		});
 	});
 
@@ -128,12 +131,13 @@ describe("webhook tools", () => {
 			).rejects.toThrow();
 		});
 
-		it("rejects invalid webhook URL format", async () => {
-			const result = await callTool("send_webhook_message", {
-				webhookUrl: "https://example.com/not-a-webhook",
-				message: "Oops",
-			});
-			expect(result).toContain("Invalid webhook URL format");
+		it("throws UserError for invalid webhook URL format", async () => {
+			await expect(
+				callTool("send_webhook_message", {
+					webhookUrl: "https://example.com/not-a-webhook",
+					message: "Oops",
+				}),
+			).rejects.toBeInstanceOf(UserError);
 		});
 
 		it("calls webhook.send with correct content and username override", async () => {

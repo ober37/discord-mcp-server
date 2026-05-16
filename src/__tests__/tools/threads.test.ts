@@ -72,12 +72,13 @@ describe("thread tools", () => {
 			expect(result).toContain("No threads found");
 		});
 
-		it("returns does-not-support-threads message for voice channelId", async () => {
-			const result = await callTool("list_threads", {
-				guildId: GUILD_FIXTURE.id,
-				channelId: CHANNEL_VOICE.id,
-			});
-			expect(result).toContain("does not support threads");
+		it("throws UserError for voice channelId (does not support threads)", async () => {
+			await expect(
+				callTool("list_threads", {
+					guildId: GUILD_FIXTURE.id,
+					channelId: CHANNEL_VOICE.id,
+				}),
+			).rejects.toBeInstanceOf(UserError);
 		});
 	});
 
