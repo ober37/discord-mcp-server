@@ -389,5 +389,7 @@ Current intents in `src/discord.ts`:
 | `GuildPresence` | ✅ enabled | `get_member_presence` (privileged — requires Developer Portal toggle; data cached from `presenceUpdate` Gateway events) |
 | `DirectMessages` | ✅ enabled | `send_dm`, `read_dm` |
 | `AutoModerationConfiguration` | ✅ enabled | automod tools (`list_automod_rules`, `create_automod_rule`, `edit_automod_rule`, `delete_automod_rule`) |
+| `GuildMessageReactions` | ✅ enabled | reaction tools (`add_reaction`, `remove_reaction`, `get_reactions`, `clear_reactions`) |
+| `GuildVoiceStates` | ✅ enabled | voice tools (`move_member_to_voice`, `disconnect_member_from_voice`) |
 
 When adding a new intent, update both `src/discord.ts` and this table.

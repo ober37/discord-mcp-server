@@ -1,5 +1,6 @@
 import type { Client, TextChannel } from "discord.js";
 import type { FastMCP } from "fastmcp";
+import { UserError } from "fastmcp";
 import { z } from "zod/v4";
 import { DEFAULT_MAX_FILE_BYTES, fetchAttachments, maxFileBytesForTier } from "../attachments.ts";
 import { attachmentUrlsParam, embedsParam } from "../schemas.ts";
@@ -42,7 +43,7 @@ export function registerMessageTools(
 			return withDiscordErrorHandling(async () => {
 				const channel = await client.channels.fetch(args.channelId);
 				if (!channel?.isTextBased() || !("send" in channel)) {
-					return `Channel ${args.channelId} is not a text channel or cannot receive messages.`;
+					throw new UserError(`Channel ${args.channelId} is not a text-based channel.`);
 				}
 
 				const guildChannel = channel as TextChannel;
@@ -83,7 +84,7 @@ export function registerMessageTools(
 			return withDiscordErrorHandling(async () => {
 				const channel = await client.channels.fetch(args.channelId);
 				if (!channel?.isTextBased() || !("messages" in channel)) {
-					return `Channel ${args.channelId} is not a text channel.`;
+					throw new UserError(`Channel ${args.channelId} is not a text-based channel.`);
 				}
 
 				const messages = await (channel as TextChannel).messages.fetch({
@@ -115,7 +116,7 @@ export function registerMessageTools(
 			return withDiscordErrorHandling(async () => {
 				const channel = await client.channels.fetch(args.channelId);
 				if (!channel?.isTextBased() || !("messages" in channel)) {
-					return `Channel ${args.channelId} is not a text channel.`;
+					throw new UserError(`Channel ${args.channelId} is not a text-based channel.`);
 				}
 
 				const message = await (channel as TextChannel).messages.fetch(args.messageId);
@@ -141,7 +142,7 @@ export function registerMessageTools(
 			return withDiscordErrorHandling(async () => {
 				const channel = await client.channels.fetch(args.channelId);
 				if (!channel?.isTextBased() || !("messages" in channel)) {
-					return `Channel ${args.channelId} is not a text channel.`;
+					throw new UserError(`Channel ${args.channelId} is not a text-based channel.`);
 				}
 
 				const message = await (channel as TextChannel).messages.fetch(args.messageId);
@@ -163,7 +164,7 @@ export function registerMessageTools(
 			return withDiscordErrorHandling(async () => {
 				const channel = await client.channels.fetch(args.channelId);
 				if (!channel?.isTextBased() || !("messages" in channel)) {
-					return `Channel ${args.channelId} is not a text channel.`;
+					throw new UserError(`Channel ${args.channelId} is not a text-based channel.`);
 				}
 
 				const message = await (channel as TextChannel).messages.fetch(args.messageId);
@@ -185,11 +186,15 @@ export function registerMessageTools(
 			return withDiscordErrorHandling(async () => {
 				const channel = await client.channels.fetch(args.channelId);
 				if (!channel?.isTextBased() || !("messages" in channel)) {
-					return `Channel ${args.channelId} is not a text channel.`;
+					throw new UserError(`Channel ${args.channelId} is not a text-based channel.`);
 				}
 
 				const message = await (channel as TextChannel).messages.fetch(args.messageId);
-				await message.reactions.cache.get(args.emoji)?.users.remove(client.user?.id);
+				const reaction = message.reactions.cache.get(args.emoji);
+				if (!reaction) {
+					return `No reaction ${args.emoji} found on message ${args.messageId}.`;
+				}
+				await reaction.users.remove(client.user?.id);
 				return `✅ Removed reaction ${args.emoji} from message ${args.messageId}.`;
 			});
 		},
@@ -211,7 +216,7 @@ export function registerMessageTools(
 			return withDiscordErrorHandling(async () => {
 				const channel = await client.channels.fetch(args.channelId);
 				if (!channel?.isTextBased() || !("messages" in channel)) {
-					return `Channel ${args.channelId} is not a text channel.`;
+					throw new UserError(`Channel ${args.channelId} is not a text-based channel.`);
 				}
 				const deleted = await (channel as TextChannel).bulkDelete(args.messageIds);
 				return `✅ Bulk deleted ${deleted.size} messages from the channel.`;
@@ -230,7 +235,7 @@ export function registerMessageTools(
 			return withDiscordErrorHandling(async () => {
 				const channel = await client.channels.fetch(args.channelId);
 				if (!channel?.isTextBased() || !("messages" in channel)) {
-					return `Channel ${args.channelId} is not a text channel.`;
+					throw new UserError(`Channel ${args.channelId} is not a text-based channel.`);
 				}
 				const message = await (channel as TextChannel).messages.fetch(args.messageId);
 				await message.pin();
@@ -250,7 +255,7 @@ export function registerMessageTools(
 			return withDiscordErrorHandling(async () => {
 				const channel = await client.channels.fetch(args.channelId);
 				if (!channel?.isTextBased() || !("messages" in channel)) {
-					return `Channel ${args.channelId} is not a text channel.`;
+					throw new UserError(`Channel ${args.channelId} is not a text-based channel.`);
 				}
 				const message = await (channel as TextChannel).messages.fetch(args.messageId);
 				await message.unpin();
@@ -269,7 +274,7 @@ export function registerMessageTools(
 			return withDiscordErrorHandling(async () => {
 				const channel = await client.channels.fetch(args.channelId);
 				if (!channel?.isTextBased() || !("messages" in channel)) {
-					return `Channel ${args.channelId} is not a text channel.`;
+					throw new UserError(`Channel ${args.channelId} is not a text-based channel.`);
 				}
 				const pinned = await (channel as TextChannel).messages.fetchPinned();
 				if (pinned.size === 0) {
@@ -299,7 +304,7 @@ export function registerMessageTools(
 			return withDiscordErrorHandling(async () => {
 				const channel = await client.channels.fetch(args.channelId);
 				if (!channel?.isTextBased() || !("messages" in channel)) {
-					return `Channel ${args.channelId} is not a text channel.`;
+					throw new UserError(`Channel ${args.channelId} is not a text-based channel.`);
 				}
 				const message = await (channel as TextChannel).messages.fetch(args.messageId);
 				const reaction = message.reactions.resolve(args.emoji);
@@ -327,7 +332,7 @@ export function registerMessageTools(
 			return withDiscordErrorHandling(async () => {
 				const channel = await client.channels.fetch(args.channelId);
 				if (!channel?.isTextBased() || !("messages" in channel)) {
-					return `Channel ${args.channelId} is not a text channel.`;
+					throw new UserError(`Channel ${args.channelId} is not a text-based channel.`);
 				}
 				const message = await (channel as TextChannel).messages.fetch(args.messageId);
 				await message.reactions.removeAll();

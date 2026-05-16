@@ -14,13 +14,15 @@ export function registerServerInfoTools(
 			"List all Discord servers (guilds) the bot is a member of. Returns server names and IDs.",
 		parameters: z.object({}),
 		execute: async () => {
-			const guilds = client.guilds.cache;
-			if (guilds.size === 0) {
-				return "The bot is not a member of any servers.";
-			}
+			return withDiscordErrorHandling(async () => {
+				const guilds = client.guilds.cache;
+				if (guilds.size === 0) {
+					return "The bot is not a member of any servers.";
+				}
 
-			const lines = guilds.map((g) => `• ${g.name} (ID: ${g.id}, Members: ${g.memberCount})`);
-			return `**Servers (${guilds.size}):**\n${lines.join("\n")}`;
+				const lines = guilds.map((g) => `• ${g.name} (ID: ${g.id}, Members: ${g.memberCount})`);
+				return `**Servers (${guilds.size}):**\n${lines.join("\n")}`;
+			});
 		},
 	});
 

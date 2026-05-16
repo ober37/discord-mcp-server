@@ -2,6 +2,31 @@ import { AttachmentBuilder } from "discord.js";
 import { UserError } from "fastmcp";
 
 /**
+ * Returns true for URLs that target private/internal network addresses.
+ * Prevents the MCP server from being used as an SSRF proxy.
+ *
+ * Note: new URL().hostname wraps IPv6 addresses in brackets (e.g. "[::1]").
+ * Brackets are stripped before matching so that IPv6 loopback and private
+ * ranges are correctly blocked. Covered ranges:
+ *   IPv4 — loopback (127.x), RFC1918 (10.x, 172.16-31.x, 192.168.x),
+ *           link-local (169.254.x), unspecified (0.0.0.0)
+ *   IPv6 — loopback (::1), IPv4-mapped (::ffff:), ULA (fc00::/7 = fc/fd prefixes),
+ *           link-local (fe80:)
+ */
+function isPrivateUrl(url: string): boolean {
+	try {
+		const { hostname } = new URL(url);
+		// Strip brackets that new URL() adds around IPv6 addresses.
+		const host = hostname.startsWith("[") ? hostname.slice(1, -1) : hostname;
+		return /^(localhost|127\.|10\.|172\.(1[6-9]|2\d|3[01])\.|192\.168\.|169\.254\.|0\.0\.0\.0$|::1$|::ffff:|f[cd][0-9a-f]{2}:|fe80:)/i.test(
+			host,
+		);
+	} catch {
+		return false;
+	}
+}
+
+/**
  * Discord per-file upload size limits by server boost tier.
  * discord.js exposes guild.premiumTier as GuildPremiumTier (enum 0–3).
  * There is no maximumFileSize property on Guild — limits are derived here.
@@ -46,6 +71,12 @@ export async function fetchAttachments(
 ): Promise<AttachmentBuilder[]> {
 	return Promise.all(
 		urls.map(async (url) => {
+			if (isPrivateUrl(url)) {
+				throw new UserError(
+					`Attachment URL targets a private or internal address and cannot be fetched: ${url}`,
+				);
+			}
+
 			// ── 1. Advisory HEAD ─────────────────────────────────────────────────
 			try {
 				const head = await fetch(url, { method: "HEAD" });

@@ -21,7 +21,15 @@ export function registerAuditTools(server: FastMCP, client: Client, defaultGuild
 				.string()
 				.optional()
 				.describe(
-					"Filter by action type name. Common values: MemberKick, MemberBanAdd, MemberBanRemove, MemberUpdate, MessageDelete, MessageBulkDelete, MessagePin, MessageUnpin, ChannelCreate, ChannelDelete, ChannelUpdate, RoleCreate, RoleDelete, InviteCreate, InviteDelete, WebhookCreate, ThreadCreate.",
+					"Filter by action type name. Member actions: MemberKick, MemberBanAdd, MemberBanRemove, MemberUpdate, MemberRoleUpdate, MemberMove, MemberDisconnect, BotAdd. " +
+						"Message actions: MessageDelete, MessageBulkDelete, MessagePin, MessageUnpin. " +
+						"Channel actions: ChannelCreate, ChannelDelete, ChannelUpdate, ChannelOverwriteCreate, ChannelOverwriteUpdate, ChannelOverwriteDelete. " +
+						"Role actions: RoleCreate, RoleDelete, RoleUpdate. " +
+						"Thread actions: ThreadCreate, ThreadUpdate, ThreadDelete. " +
+						"Invite actions: InviteCreate, InviteUpdate, InviteDelete. " +
+						"Webhook actions: WebhookCreate, WebhookUpdate, WebhookDelete. " +
+						"Emoji actions: EmojiCreate, EmojiUpdate, EmojiDelete. " +
+						"Other: GuildUpdate, IntegrationCreate, IntegrationUpdate, IntegrationDelete, StageInstanceCreate, StageInstanceDelete, AutoModerationBlockMessage.",
 				),
 			userId: z
 				.string()

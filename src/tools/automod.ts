@@ -357,6 +357,20 @@ export function registerAutomodTools(
 			return withDiscordErrorHandling(async () => {
 				const guild = await resolveGuild(client, args.guildId, defaultGuildId);
 				const triggerMeta = buildTriggerMetadata(args);
+
+				const hasChanges =
+					args.name !== undefined ||
+					args.eventType !== undefined ||
+					triggerMeta !== undefined ||
+					args.actions !== undefined ||
+					args.enabled !== undefined ||
+					args.exemptRoleIds !== undefined ||
+					args.exemptChannelIds !== undefined;
+
+				if (!hasChanges) {
+					return "No changes specified.";
+				}
+
 				const rule = await guild.autoModerationRules.edit(args.ruleId, {
 					name: args.name,
 					eventType: args.eventType ? EVENT_TYPE_MAP[args.eventType] : undefined,

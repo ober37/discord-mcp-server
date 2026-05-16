@@ -58,10 +58,18 @@ export function registerMemberTools(
 			guildId: z.string().optional().describe("Server ID. Falls back to DISCORD_GUILD_ID env var."),
 			limit: z
 				.number()
+				.int()
+				.min(1)
+				.max(1000)
 				.optional()
 				.default(100)
 				.describe("Number of members to return (1–1000). Default: 100."),
-			roleId: z.string().optional().describe("Filter to members who have this role ID."),
+			roleId: z
+				.string()
+				.optional()
+				.describe(
+					"Filter to members who have this role ID. Note: the limit is applied before filtering, so set limit to 1000 to ensure all role members are returned.",
+				),
 		}),
 		execute: async (args) => {
 			return withDiscordErrorHandling(async () => {
@@ -207,6 +215,9 @@ export function registerMemberTools(
 			reason: z.string().optional().describe("Reason for the ban (recorded in the audit log)."),
 			deleteMessageDays: z
 				.number()
+				.int()
+				.min(0)
+				.max(7)
 				.optional()
 				.describe("Days of message history to delete (0–7). Default: 0."),
 		}),
@@ -250,6 +261,9 @@ export function registerMemberTools(
 			guildId: z.string().optional().describe("Server ID. Falls back to DISCORD_GUILD_ID env var."),
 			limit: z
 				.number()
+				.int()
+				.min(1)
+				.max(1000)
 				.optional()
 				.describe("Maximum number of bans to return (1–1000). Default: 100."),
 		}),
@@ -277,6 +291,9 @@ export function registerMemberTools(
 			userId: z.string().describe("ID of the member to timeout."),
 			durationMinutes: z
 				.number()
+				.int()
+				.min(0)
+				.max(40320)
 				.optional()
 				.describe(
 					"Timeout duration in minutes (1–40320, max 28 days). Omit or pass 0 to remove an existing timeout.",
