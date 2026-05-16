@@ -74,9 +74,8 @@ export function registerMemberTools(
 		execute: async (args) => {
 			return withDiscordErrorHandling(async () => {
 				const guild = await resolveGuild(client, args.guildId, defaultGuildId);
-				const limit = Math.min(Math.max(args.limit ?? 100, 1), 1000);
-
-				let members = await guild.members.list({ limit });
+				// Zod schema already enforces .min(1).max(1000).default(100) — no runtime clamp needed.
+				let members = await guild.members.list({ limit: args.limit });
 
 				if (args.roleId) {
 					const roleId = args.roleId;

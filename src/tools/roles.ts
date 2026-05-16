@@ -7,26 +7,29 @@ import { resolveGuild, withDiscordErrorHandling } from "../utils.ts";
 export function registerRoleTools(server: FastMCP, client: Client, defaultGuildId?: string): void {
 	server.addTool({
 		name: "list_roles",
-		description: "List all roles in a Discord server with their color, position, and member count.",
+		description:
+			"List all roles in a Discord server with their color, position, and approximate member count. Member counts are derived from the cached members the bot has observed and may understate reality on large guilds — use list_members with a roleId filter for exact counts.",
 		parameters: z.object({
 			guildId: z.string().optional().describe("Server ID. Falls back to DISCORD_GUILD_ID env var."),
 		}),
 		execute: async (args) => {
 			return withDiscordErrorHandling(async () => {
 				const guild = await resolveGuild(client, args.guildId, defaultGuildId);
-				// Fetch all members to populate guild.members.cache so that
-				// role.members (which filters the cache) returns accurate counts.
-				await guild.members.fetch();
+				// `role.members` filters guild.members.cache. We deliberately do NOT
+				// call guild.members.fetch() here — that would request every member in
+				// the guild over the Gateway just to populate counts, which is slow
+				// and rate-limit-prone on large guilds. We surface cached counts as
+				// "approximate" to make the limitation explicit.
 				const roles = guild.roles.cache.sort((a, b) => b.position - a.position);
 
 				const lines = roles.map((role) => {
 					const color = role.hexColor !== "#000000" ? ` [${role.hexColor}]` : "";
 					const mentionable = role.mentionable ? " 📣" : "";
 					const hoisted = role.hoist ? " 📌" : "";
-					return `• ${role.name}${color}${hoisted}${mentionable} (ID: ${role.id}, Members: ${role.members.size})`;
+					return `• ${role.name}${color}${hoisted}${mentionable} (ID: ${role.id}, Members: ~${role.members.size})`;
 				});
 
-				return `**Roles (${roles.size}):**\n${lines.join("\n")}`;
+				return `**Roles (${roles.size}):**\n${lines.join("\n")}\n\n_Member counts are approximate (from cache). For exact per-role membership, call list_members with the roleId filter._`;
 			});
 		},
 	});

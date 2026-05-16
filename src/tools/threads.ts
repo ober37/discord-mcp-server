@@ -37,7 +37,7 @@ export function registerThreadTools(
 				if (args.channelId) {
 					const channel = await client.channels.fetch(args.channelId);
 					if (!channel?.isTextBased() || !("threads" in channel)) {
-						return `Channel ${args.channelId} does not support threads.`;
+						throw new UserError(`Channel ${args.channelId} does not support threads.`);
 					}
 
 					const activeThreads = await (channel as TextChannel).threads.fetchActive();

@@ -1,9 +1,23 @@
-import { beforeEach, describe, expect, it, mock } from "bun:test";
+import { afterAll, afterEach, beforeAll, beforeEach, describe, expect, it, mock } from "bun:test";
 import { UserError } from "fastmcp";
+import { _setSsrfDnsLookup } from "../../attachments";
 import { registerEmojiTools } from "../../tools/emojis";
 import { createMockDiscordClient } from "../helpers/discord-mock";
 import { EMOJI_DANCE, EMOJI_WAVE, GUILD_FIXTURE } from "../helpers/fixtures";
 import { createTestServer } from "../helpers/test-server";
+
+const originalFetch = globalThis.fetch;
+
+// create_emoji pre-fetches the image URL via the SSRF-safe pipeline before passing
+// the bytes to discord.js. These tests do not exercise the network path itself —
+// they only verify the tool's behavior — so we stub DNS and fetch to local fakes.
+beforeAll(() => {
+	_setSsrfDnsLookup(async () => [{ address: "93.184.215.14", family: 4 }]);
+});
+
+afterAll(() => {
+	_setSsrfDnsLookup(null);
+});
 
 describe("emoji tools", () => {
 	let client: ReturnType<typeof createMockDiscordClient>;
@@ -14,6 +28,25 @@ describe("emoji tools", () => {
 		const harness = createTestServer();
 		registerEmojiTools(harness.server, client, GUILD_FIXTURE.id);
 		callTool = harness.callTool;
+		// Stub fetch — every call returns a small in-memory PNG-like buffer.
+		const fakeBytes = new Uint8Array(64);
+		const headers = { get: (_key: string): string | null => null };
+		globalThis.fetch = mock(async (_url: string, opts?: RequestInit) => {
+			if (opts?.method === "HEAD") {
+				return { ok: true, status: 200, headers };
+			}
+			return {
+				ok: true,
+				status: 200,
+				headers,
+				arrayBuffer: async () => fakeBytes.buffer,
+				body: undefined,
+			};
+		}) as unknown as typeof fetch;
+	});
+
+	afterEach(() => {
+		globalThis.fetch = originalFetch;
 	});
 
 	describe("list_emojis", () => {
@@ -59,7 +92,7 @@ describe("emoji tools", () => {
 			expect(result).toContain("testwave");
 		});
 
-		it("calls guild.emojis.create with correct attachment and name", async () => {
+		it("pre-fetches the image and passes a Buffer to guild.emojis.create", async () => {
 			const guild = client.guilds.cache.get(GUILD_FIXTURE.id);
 			const createSpy = mock(async () => ({
 				id: "new-emoji-1",
@@ -75,12 +108,23 @@ describe("emoji tools", () => {
 			});
 
 			expect(createSpy).toHaveBeenCalledTimes(1);
-			expect(createSpy).toHaveBeenCalledWith(
-				expect.objectContaining({
-					attachment: "https://example.com/spy.png",
-					name: "spyemoji",
+			const callArgs = (
+				createSpy.mock.calls[0] as unknown as Array<{ name: string; attachment: unknown }>
+			)[0];
+			expect(callArgs.name).toBe("spyemoji");
+			// The image is downloaded server-side via the SSRF-safe pipeline; discord.js
+			// receives bytes (Buffer), not the user-supplied URL.
+			expect(Buffer.isBuffer(callArgs.attachment)).toBe(true);
+		});
+
+		it("rejects imageUrl pointing at a private/internal address (SSRF guard)", async () => {
+			await expect(
+				callTool("create_emoji", {
+					guildId: GUILD_FIXTURE.id,
+					name: "ssrf",
+					imageUrl: "http://127.0.0.1/leak.png",
 				}),
-			);
+			).rejects.toBeInstanceOf(UserError);
 		});
 
 		it("rejects invalid imageUrl (not a URL)", async () => {

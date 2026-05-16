@@ -6,8 +6,9 @@
  * are made. The original fetch is restored after each test.
  */
 
-import { afterEach, beforeEach, describe, expect, it, mock } from "bun:test";
+import { afterAll, afterEach, beforeAll, beforeEach, describe, expect, it, mock } from "bun:test";
 import { UserError } from "fastmcp";
+import { _setSsrfDnsLookup } from "../../attachments";
 import { registerMessageTools } from "../../tools/messages";
 import { registerThreadTools } from "../../tools/threads";
 import { registerWebhookTools } from "../../tools/webhooks";
@@ -18,6 +19,16 @@ import { createTestServer } from "../helpers/test-server";
 // ── Mock fetch helpers ────────────────────────────────────────────────────────
 
 const originalFetch = globalThis.fetch;
+
+// Force every DNS-resolved hostname to a known-public IP so tests are hermetic.
+// Individual test blocks can re-override (or restore default with `null`) as needed.
+beforeAll(() => {
+	_setSsrfDnsLookup(async () => [{ address: "93.184.215.14", family: 4 }]);
+});
+
+afterAll(() => {
+	_setSsrfDnsLookup(null);
+});
 
 /** Replace globalThis.fetch with a mock that returns different responses for HEAD vs GET. */
 function mockFetch(headResponse: object, getResponse: object): void {
@@ -204,6 +215,58 @@ describe("fetchAttachments — SSRF protection", () => {
 			expect(fetchSpy).not.toHaveBeenCalled();
 		});
 	}
+
+	it("rejects DNS-resolved private addresses (basic DNS rebinding mitigation)", async () => {
+		// Hostname looks public but DNS resolves to 127.0.0.1 — the lookup must catch it.
+		_setSsrfDnsLookup(async () => [{ address: "127.0.0.1", family: 4 }]);
+		const fetchSpy = mock(async () => ({ ok: true }));
+		globalThis.fetch = fetchSpy as unknown as typeof fetch;
+
+		await expect(
+			callTool("send_message", {
+				channelId: CHANNEL_GENERAL.id,
+				attachmentUrls: ["https://attacker.example.org/leak"],
+			}),
+		).rejects.toBeInstanceOf(UserError);
+
+		expect(fetchSpy).not.toHaveBeenCalled();
+		// Restore the suite-wide stub
+		_setSsrfDnsLookup(async () => [{ address: "93.184.215.14", family: 4 }]);
+	});
+
+	it("refuses HTTP 3xx redirects (prevents redirect-based SSRF bypass)", async () => {
+		// HEAD returns 302 → simulates evil.com/redirect → http://127.0.0.1/admin.
+		// The SSRF check on the original URL passed, but we must not follow the redirect.
+		const redirect = {
+			ok: false,
+			status: 302,
+			headers: { get: () => null },
+		};
+		globalThis.fetch = mock(async () => redirect) as unknown as typeof fetch;
+
+		await expect(
+			callTool("send_message", {
+				channelId: CHANNEL_GENERAL.id,
+				attachmentUrls: ["https://example.com/redirect-trap"],
+			}),
+		).rejects.toBeInstanceOf(UserError);
+	});
+
+	it("rejects non-http(s) URL schemes (file://, gopher://, etc.)", async () => {
+		// The Zod schema's .url() accepts file:// — the protocol check in assertPublicUrl
+		// is the actual defense.
+		const fetchSpy = mock(async () => ({ ok: true }));
+		globalThis.fetch = fetchSpy as unknown as typeof fetch;
+
+		await expect(
+			callTool("send_message", {
+				channelId: CHANNEL_GENERAL.id,
+				attachmentUrls: ["file:///etc/passwd"],
+			}),
+		).rejects.toBeInstanceOf(UserError);
+
+		expect(fetchSpy).not.toHaveBeenCalled();
+	});
 });
 
 // ── send_webhook_message attachment tests ─────────────────────────────────────

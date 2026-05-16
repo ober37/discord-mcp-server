@@ -1,6 +1,7 @@
 import type { Client } from "discord.js";
 import type { FastMCP } from "fastmcp";
 import { z } from "zod/v4";
+import { fetchImageBuffer } from "../attachments.ts";
 import { resolveGuild, withDiscordErrorHandling } from "../utils.ts";
 
 export function registerEmojiTools(server: FastMCP, client: Client, defaultGuildId?: string): void {
@@ -43,8 +44,11 @@ export function registerEmojiTools(server: FastMCP, client: Client, defaultGuild
 		execute: async (args) => {
 			return withDiscordErrorHandling(async () => {
 				const guild = await resolveGuild(client, args.guildId, defaultGuildId);
+				// SSRF: discord.js would fetch this URL internally with no protection.
+				// Pre-fetch via the SSRF-safe pipeline and hand discord.js the bytes instead.
+				const imageBuffer = await fetchImageBuffer(args.imageUrl);
 				const emoji = await guild.emojis.create({
-					attachment: args.imageUrl,
+					attachment: imageBuffer,
 					name: args.name,
 				});
 				return `✅ Created emoji :${emoji.name}: (ID: ${emoji.id})`;

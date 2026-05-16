@@ -1,5 +1,6 @@
 import type { Client, TextChannel } from "discord.js";
 import type { FastMCP } from "fastmcp";
+import { UserError } from "fastmcp";
 import { z } from "zod/v4";
 import { fetchAttachments } from "../attachments.ts";
 import { attachmentUrlsParam, embedsParam } from "../schemas.ts";
@@ -20,7 +21,7 @@ export function registerWebhookTools(
 			return withDiscordErrorHandling(async () => {
 				const channel = await client.channels.fetch(args.channelId);
 				if (!channel || !("fetchWebhooks" in channel)) {
-					return `Channel ${args.channelId} does not support webhooks.`;
+					throw new UserError(`Channel ${args.channelId} does not support webhooks.`);
 				}
 
 				const webhooks = await (channel as TextChannel).fetchWebhooks();
@@ -49,7 +50,7 @@ export function registerWebhookTools(
 			return withDiscordErrorHandling(async () => {
 				const channel = await client.channels.fetch(args.channelId);
 				if (!channel || !("createWebhook" in channel)) {
-					return `Channel ${args.channelId} does not support webhooks.`;
+					throw new UserError(`Channel ${args.channelId} does not support webhooks.`);
 				}
 
 				const webhook = await (channel as TextChannel).createWebhook({
@@ -110,7 +111,9 @@ export function registerWebhookTools(
 			return withDiscordErrorHandling(async () => {
 				const match = args.webhookUrl.match(/discord(?:app)?\.com\/api\/webhooks\/(\d+)\/(.+)/);
 				if (!match) {
-					return "Invalid webhook URL format. Expected: https://discord.com/api/webhooks/{id}/{token}";
+					throw new UserError(
+						"Invalid webhook URL format. Expected: https://discord.com/api/webhooks/{id}/{token}",
+					);
 				}
 
 				const [, webhookId, webhookToken] = match;

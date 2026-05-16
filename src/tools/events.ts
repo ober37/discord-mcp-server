@@ -66,7 +66,10 @@ export function registerEventTools(server: FastMCP, client: Client, defaultGuild
 			name: z.string().describe("Name of the event (1–100 characters)."),
 			scheduledStartTime: z
 				.string()
-				.describe("Event start time as an ISO 8601 string (must be in the future)."),
+				.datetime({ offset: true })
+				.describe(
+					"Event start time as an ISO 8601 string (must be in the future, e.g. '2026-06-01T18:00:00Z').",
+				),
 			entityType: z
 				.enum(["STAGE_INSTANCE", "VOICE", "EXTERNAL"])
 				.describe("Event type: STAGE_INSTANCE, VOICE, or EXTERNAL."),
@@ -76,8 +79,11 @@ export function registerEventTools(server: FastMCP, client: Client, defaultGuild
 				.describe("Optional event description (up to 1000 characters)."),
 			scheduledEndTime: z
 				.string()
+				.datetime({ offset: true })
 				.optional()
-				.describe("Event end time as an ISO 8601 string. Required for EXTERNAL type."),
+				.describe(
+					"Event end time as an ISO 8601 string (e.g. '2026-06-01T20:00:00Z'). Required for EXTERNAL type.",
+				),
 			channelId: z
 				.string()
 				.optional()
@@ -155,8 +161,16 @@ export function registerEventTools(server: FastMCP, client: Client, defaultGuild
 				.string()
 				.optional()
 				.describe("New description. Pass an empty string to clear."),
-			scheduledStartTime: z.string().optional().describe("New start time as an ISO 8601 string."),
-			scheduledEndTime: z.string().optional().describe("New end time as an ISO 8601 string."),
+			scheduledStartTime: z
+				.string()
+				.datetime({ offset: true })
+				.optional()
+				.describe("New start time as an ISO 8601 string (e.g. '2026-06-01T18:00:00Z')."),
+			scheduledEndTime: z
+				.string()
+				.datetime({ offset: true })
+				.optional()
+				.describe("New end time as an ISO 8601 string (e.g. '2026-06-01T20:00:00Z')."),
 			status: z
 				.enum(["ACTIVE", "COMPLETED", "CANCELLED"])
 				.optional()
