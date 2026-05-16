@@ -535,19 +535,14 @@ describe("member tools", () => {
 			});
 		});
 
-		it("clamps deleteMessageDays above 7 to 7", async () => {
-			const guild = client.guilds.cache.get(GUILD_FIXTURE.id);
-			const banSpy = mock(() => Promise.resolve());
-			guild.bans.create = banSpy;
-
-			await callTool("ban_member", {
-				userId: REGULAR_USER.id,
-				deleteMessageDays: 10,
-				guildId: GUILD_FIXTURE.id,
-			});
-			expect(banSpy).toHaveBeenCalledWith(REGULAR_USER.id, {
-				deleteMessageSeconds: 7 * 86400,
-			});
+		it("rejects deleteMessageDays above 7 with a validation error", async () => {
+			await expect(
+				callTool("ban_member", {
+					userId: REGULAR_USER.id,
+					deleteMessageDays: 10,
+					guildId: GUILD_FIXTURE.id,
+				}),
+			).rejects.toThrow();
 		});
 
 		it("includes reason in output and passes it to bans.create()", async () => {
@@ -737,19 +732,14 @@ describe("member tools", () => {
 			expect(timeoutSpy).toHaveBeenCalledWith(null, undefined);
 		});
 
-		it("clamps durationMinutes to 40320 (28 days) when given a larger value", async () => {
-			const guild = client.guilds.cache.get(GUILD_FIXTURE.id);
-			const member = guild.members.cache.get(REGULAR_USER.id);
-			const timeoutSpy = mock(() => Promise.resolve());
-			member.timeout = timeoutSpy;
-
-			await callTool("timeout_member", {
-				userId: REGULAR_USER.id,
-				durationMinutes: 99999,
-				guildId: GUILD_FIXTURE.id,
-			});
-			// Clamped: 40320 min × 60 × 1000 = 2419200000 ms
-			expect(timeoutSpy).toHaveBeenCalledWith(40320 * 60 * 1000, undefined);
+		it("rejects durationMinutes above 40320 with a validation error", async () => {
+			await expect(
+				callTool("timeout_member", {
+					userId: REGULAR_USER.id,
+					durationMinutes: 99999,
+					guildId: GUILD_FIXTURE.id,
+				}),
+			).rejects.toThrow();
 		});
 
 		it("returns 'Removed timeout' message when duration is null", async () => {

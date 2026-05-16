@@ -69,8 +69,12 @@ const DISCORD_ERROR_MAP: Record<number, string> = {
 	10063: "Unknown application command. The command may have been deleted or does not exist.",
 	10070: "Unknown scheduled event. The event may have been deleted or does not exist.",
 	10061: "Unknown auto-moderation rule. The rule may have been deleted or does not exist.",
+	30007: "Maximum number of webhooks reached for this guild or channel (limit: 10).",
+	30010: "Maximum number of emojis reached for this server.",
 	30016: "Maximum number of auto-moderation rules of this trigger type reached for the guild.",
 	40032: "Target user is not connected to voice.",
+	40058: "Cannot send messages to a locked or archived thread.",
+	160004: "Thread must have a message to be created in a forum channel.",
 };
 
 /**

@@ -195,7 +195,7 @@ describe("channel tools", () => {
 			expect(result).toContain("Moved");
 			expect(result).toContain(CHANNEL_GENERAL.name);
 			expect(result).toContain(CATEGORY_DEV.id);
-			expect(setParentSpy).toHaveBeenCalledTimes(1);
+			expect(setParentSpy).toHaveBeenCalledWith(CATEGORY_DEV.id, { lockPermissions: true }); // sync perms with category
 		});
 
 		it("throws UserError for unknown channelId", async () => {
@@ -224,6 +224,20 @@ describe("channel tools", () => {
 			} finally {
 				client.channels.fetch = original;
 			}
+		});
+
+		it("moves a channel out of its category when categoryId is null", async () => {
+			const channel = await client.channels.fetch(CHANNEL_GENERAL.id);
+			const setParentSpy = mock(() => Promise.resolve());
+			channel.setParent = setParentSpy;
+
+			const result = await callTool("move_channel", {
+				channelId: CHANNEL_GENERAL.id,
+				categoryId: null,
+			});
+			expect(result).toContain("✅");
+			expect(result).toContain("no category");
+			expect(setParentSpy).toHaveBeenCalledWith(null, { lockPermissions: false }); // no parent to sync from
 		});
 
 		it("uses voice channel ID — still works since voice supports setParent", async () => {

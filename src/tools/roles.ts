@@ -39,6 +39,7 @@ export function registerRoleTools(server: FastMCP, client: Client, defaultGuildI
 			name: z.string().describe("Name for the new role."),
 			color: z
 				.string()
+				.regex(/^#[0-9A-Fa-f]{6}$/)
 				.optional()
 				.describe("Hex color for the role (e.g., '#FF5733'). Default: no color."),
 			hoist: z
@@ -75,7 +76,11 @@ export function registerRoleTools(server: FastMCP, client: Client, defaultGuildI
 			guildId: z.string().optional().describe("Server ID. Falls back to DISCORD_GUILD_ID env var."),
 			roleId: z.string().describe("ID of the role to edit."),
 			name: z.string().optional().describe("New name for the role."),
-			color: z.string().optional().describe("New hex color for the role (e.g., '#FF5733')."),
+			color: z
+				.string()
+				.regex(/^#[0-9A-Fa-f]{6}$/)
+				.optional()
+				.describe("New hex color for the role (e.g., '#FF5733')."),
 			hoist: z
 				.boolean()
 				.optional()

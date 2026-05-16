@@ -28,7 +28,6 @@ describe("webhook tools", () => {
 			expect(result).toContain(WEBHOOK_GITHUB.name);
 			expect(result).toContain(WEBHOOK_MONITORING.name);
 			expect(result).toContain(`ID: ${WEBHOOK_GITHUB.id}`);
-			expect(result).toContain("URL:");
 		});
 
 		it("returns does-not-support-webhooks for voice channel", async () => {

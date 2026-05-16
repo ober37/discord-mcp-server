@@ -98,12 +98,16 @@ describe("message tools", () => {
 			).rejects.toThrow();
 		});
 
-		it("returns not-a-text-channel message for voice channelId", async () => {
-			const result = await callTool("send_message", {
-				channelId: CHANNEL_VOICE.id,
-				message: "Hello",
-			});
-			expect(result).toContain("not a text channel");
+		it("throws UserError for voice channelId", async () => {
+			try {
+				await callTool("send_message", {
+					channelId: CHANNEL_VOICE.id,
+					message: "Hello",
+				});
+				expect.unreachable("Should have thrown");
+			} catch (e) {
+				expect(e).toBeInstanceOf(UserError);
+			}
 		});
 	});
 
@@ -129,9 +133,13 @@ describe("message tools", () => {
 			channel.messages.fetch = originalFetch;
 		});
 
-		it("returns not-a-text-channel message for voice channelId", async () => {
-			const result = await callTool("read_messages", { channelId: CHANNEL_VOICE.id });
-			expect(result).toContain("not a text channel");
+		it("throws UserError for voice channelId", async () => {
+			try {
+				await callTool("read_messages", { channelId: CHANNEL_VOICE.id });
+				expect.unreachable("Should have thrown");
+			} catch (e) {
+				expect(e).toBeInstanceOf(UserError);
+			}
 		});
 	});
 
@@ -163,13 +171,17 @@ describe("message tools", () => {
 			expect(result).toContain("Cannot edit messages from other users");
 		});
 
-		it("returns not-a-text-channel message for voice channelId", async () => {
-			const result = await callTool("edit_message", {
-				channelId: CHANNEL_VOICE.id,
-				messageId: MESSAGE_FROM_BOT.id,
-				newMessage: "Updated",
-			});
-			expect(result).toContain("not a text channel");
+		it("throws UserError for voice channelId", async () => {
+			try {
+				await callTool("edit_message", {
+					channelId: CHANNEL_VOICE.id,
+					messageId: MESSAGE_FROM_BOT.id,
+					newMessage: "Updated",
+				});
+				expect.unreachable("Should have thrown");
+			} catch (e) {
+				expect(e).toBeInstanceOf(UserError);
+			}
 		});
 	});
 
@@ -223,13 +235,10 @@ describe("message tools", () => {
 			expect(result).toContain(MESSAGE_SIMPLE.id);
 		});
 
-		it("silently no-ops and still returns success when emoji is not in cache", async () => {
-			// The optional chain means an absent emoji does nothing rather than throwing.
-			// This documents the behaviour so regressions in either direction are caught.
+		it("returns not-found message when emoji is not in cache", async () => {
 			const channel = await client.channels.fetch(CHANNEL_GENERAL.id);
 			const msg = await channel.messages.fetch(MESSAGE_SIMPLE.id);
 			const removeSpy = mock(() => Promise.resolve());
-			// Ensure the emoji is NOT in the reactions cache
 			const originalGet = msg.reactions.cache.get;
 			msg.reactions.cache.get = () => undefined;
 
@@ -239,7 +248,8 @@ describe("message tools", () => {
 				emoji: "🔥",
 			});
 
-			expect(result).toContain("✅");
+			expect(result).toContain("No reaction");
+			expect(result).toContain("🔥");
 			expect(removeSpy).not.toHaveBeenCalled();
 
 			msg.reactions.cache.get = originalGet;
@@ -314,12 +324,16 @@ describe("message tools", () => {
 			).rejects.toThrow();
 		});
 
-		it("returns not-a-text-channel for voice channelId", async () => {
-			const result = await callTool("bulk_delete_messages", {
-				channelId: CHANNEL_VOICE.id,
-				messageIds: [MESSAGE_SIMPLE.id, MESSAGE_FROM_BOT.id],
-			});
-			expect(result).toContain("not a text channel");
+		it("throws UserError for voice channelId", async () => {
+			try {
+				await callTool("bulk_delete_messages", {
+					channelId: CHANNEL_VOICE.id,
+					messageIds: [MESSAGE_SIMPLE.id, MESSAGE_FROM_BOT.id],
+				});
+				expect.unreachable("Should have thrown");
+			} catch (e) {
+				expect(e).toBeInstanceOf(UserError);
+			}
 		});
 	});
 
@@ -340,12 +354,16 @@ describe("message tools", () => {
 			expect(pinSpy).toHaveBeenCalledTimes(1);
 		});
 
-		it("returns not-a-text-channel for voice channelId", async () => {
-			const result = await callTool("pin_message", {
-				channelId: CHANNEL_VOICE.id,
-				messageId: MESSAGE_SIMPLE.id,
-			});
-			expect(result).toContain("not a text channel");
+		it("throws UserError for voice channelId", async () => {
+			try {
+				await callTool("pin_message", {
+					channelId: CHANNEL_VOICE.id,
+					messageId: MESSAGE_SIMPLE.id,
+				});
+				expect.unreachable("Should have thrown");
+			} catch (e) {
+				expect(e).toBeInstanceOf(UserError);
+			}
 		});
 
 		it("throws UserError for unknown messageId", async () => {
@@ -383,12 +401,16 @@ describe("message tools", () => {
 			expect(unpinSpy).toHaveBeenCalledTimes(1);
 		});
 
-		it("returns not-a-text-channel for voice channelId", async () => {
-			const result = await callTool("unpin_message", {
-				channelId: CHANNEL_VOICE.id,
-				messageId: MESSAGE_SIMPLE.id,
-			});
-			expect(result).toContain("not a text channel");
+		it("throws UserError for voice channelId", async () => {
+			try {
+				await callTool("unpin_message", {
+					channelId: CHANNEL_VOICE.id,
+					messageId: MESSAGE_SIMPLE.id,
+				});
+				expect.unreachable("Should have thrown");
+			} catch (e) {
+				expect(e).toBeInstanceOf(UserError);
+			}
 		});
 
 		it("throws UserError for unknown messageId", async () => {
@@ -441,11 +463,15 @@ describe("message tools", () => {
 			expect(result).toContain("No pinned messages");
 		});
 
-		it("returns not-a-text-channel for voice channelId", async () => {
-			const result = await callTool("get_pinned_messages", {
-				channelId: CHANNEL_VOICE.id,
-			});
-			expect(result).toContain("not a text channel");
+		it("throws UserError for voice channelId", async () => {
+			try {
+				await callTool("get_pinned_messages", {
+					channelId: CHANNEL_VOICE.id,
+				});
+				expect.unreachable("Should have thrown");
+			} catch (e) {
+				expect(e).toBeInstanceOf(UserError);
+			}
 		});
 	});
 
@@ -513,13 +539,17 @@ describe("message tools", () => {
 			}
 		});
 
-		it("returns not-a-text-channel for voice channelId", async () => {
-			const result = await callTool("get_reactions", {
-				channelId: CHANNEL_VOICE.id,
-				messageId: MESSAGE_SIMPLE.id,
-				emoji: "👍",
-			});
-			expect(result).toContain("not a text channel");
+		it("throws UserError for voice channelId", async () => {
+			try {
+				await callTool("get_reactions", {
+					channelId: CHANNEL_VOICE.id,
+					messageId: MESSAGE_SIMPLE.id,
+					emoji: "👍",
+				});
+				expect.unreachable("Should have thrown");
+			} catch (e) {
+				expect(e).toBeInstanceOf(UserError);
+			}
 		});
 	});
 
@@ -540,12 +570,16 @@ describe("message tools", () => {
 			expect(removeAllSpy).toHaveBeenCalledTimes(1);
 		});
 
-		it("returns not-a-text-channel for voice channelId", async () => {
-			const result = await callTool("clear_reactions", {
-				channelId: CHANNEL_VOICE.id,
-				messageId: MESSAGE_SIMPLE.id,
-			});
-			expect(result).toContain("not a text channel");
+		it("throws UserError for voice channelId", async () => {
+			try {
+				await callTool("clear_reactions", {
+					channelId: CHANNEL_VOICE.id,
+					messageId: MESSAGE_SIMPLE.id,
+				});
+				expect.unreachable("Should have thrown");
+			} catch (e) {
+				expect(e).toBeInstanceOf(UserError);
+			}
 		});
 
 		it("throws UserError for unknown messageId", async () => {

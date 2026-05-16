@@ -12,7 +12,7 @@ export function registerWebhookTools(
 ): void {
 	server.addTool({
 		name: "list_webhooks",
-		description: "List all webhooks in a Discord channel.",
+		description: "List all webhooks in a Discord channel. Requires MANAGE_WEBHOOKS permission.",
 		parameters: z.object({
 			channelId: z.string().describe("ID of the channel to list webhooks for."),
 		}),
@@ -30,7 +30,7 @@ export function registerWebhookTools(
 
 				const lines = webhooks.map(
 					(wh) =>
-						`• ${wh.name} (ID: ${wh.id})\n  URL: ${wh.url}\n  Created by: ${wh.owner && "tag" in wh.owner ? wh.owner.tag : "Unknown"}`,
+						`• ${wh.name} (ID: ${wh.id})\n  Created by: ${wh.owner && "tag" in wh.owner ? wh.owner.tag : "Unknown"}`,
 				);
 
 				return `**Webhooks (${webhooks.size}):**\n${lines.join("\n\n")}`;
@@ -40,7 +40,7 @@ export function registerWebhookTools(
 
 	server.addTool({
 		name: "create_webhook",
-		description: "Create a new webhook for a Discord channel.",
+		description: "Create a new webhook for a Discord channel. Requires MANAGE_WEBHOOKS permission.",
 		parameters: z.object({
 			channelId: z.string().describe("ID of the channel to create the webhook in."),
 			name: z.string().describe("Display name for the webhook."),
@@ -56,14 +56,14 @@ export function registerWebhookTools(
 					name: args.name,
 				});
 
-				return `✅ Created webhook "${args.name}" (ID: ${webhook.id})\nURL: ${webhook.url}`;
+				return `✅ Created webhook "${args.name}" (ID: ${webhook.id})\nURL: ${webhook.url}\n⚠️ The webhook URL contains a secret token — treat it like a password. Do not share or log it.`;
 			});
 		},
 	});
 
 	server.addTool({
 		name: "delete_webhook",
-		description: "Delete a webhook by its ID.",
+		description: "Delete a webhook by its ID. Requires MANAGE_WEBHOOKS permission.",
 		parameters: z.object({
 			webhookId: z.string().describe("ID of the webhook to delete."),
 		}),
@@ -135,7 +135,7 @@ export function registerWebhookTools(
 
 	server.addTool({
 		name: "edit_webhook",
-		description: "Edit an existing webhook's name or channel.",
+		description: "Edit an existing webhook's name or channel. Requires MANAGE_WEBHOOKS permission.",
 		parameters: z.object({
 			webhookId: z.string().describe("ID of the webhook to edit."),
 			name: z.string().optional().describe("New name for the webhook."),

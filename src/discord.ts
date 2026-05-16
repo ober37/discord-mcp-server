@@ -18,6 +18,8 @@ export async function createDiscordClient(token: string): Promise<Client> {
 			GatewayIntentBits.GuildScheduledEvents,
 			GatewayIntentBits.DirectMessages,
 			GatewayIntentBits.AutoModerationConfiguration,
+			GatewayIntentBits.GuildMessageReactions,
+			GatewayIntentBits.GuildVoiceStates,
 		],
 	});
 

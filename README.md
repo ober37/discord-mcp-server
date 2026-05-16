@@ -200,8 +200,10 @@ src/
     ├── invites.ts      # Invite CRUD (create, list, delete)
     ├── emojis.ts       # Emoji listing, creation, and deletion
     ├── dm.ts           # Direct message send/read
+    ├── audit.ts        # Audit log fetching
     ├── events.ts       # Scheduled event CRUD (list, create, edit, delete)
-    └── automod.ts      # Auto-moderation rule CRUD (list, create, edit, delete)
+    ├── automod.ts      # Auto-moderation rule CRUD (list, create, edit, delete)
+    └── commands.ts     # Application (slash) command listing and deletion
 ```
 
 ## Contributing

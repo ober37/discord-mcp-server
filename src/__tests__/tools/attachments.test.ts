@@ -154,6 +154,58 @@ describe("send_message — native attachments", () => {
 	});
 });
 
+// ── SSRF protection tests ─────────────────────────────────────────────────────
+
+describe("fetchAttachments — SSRF protection", () => {
+	let callTool: ReturnType<typeof createTestServer>["callTool"];
+
+	beforeEach(() => {
+		const client = createMockDiscordClient();
+		const harness = createTestServer();
+		registerMessageTools(harness.server, client);
+		callTool = harness.callTool;
+	});
+
+	afterEach(() => {
+		globalThis.fetch = originalFetch;
+	});
+
+	const privateUrls = [
+		// IPv4 private ranges
+		"http://127.0.0.1/secret",
+		"http://10.0.0.1/internal",
+		"http://192.168.1.1/admin",
+		"http://172.16.0.1/private",
+		"http://169.254.169.254/latest/meta-data/",
+		"http://0.0.0.0/local",
+		// IPv6 loopback and private — these were bypassed before the bracket-strip fix
+		"http://[::1]/secret",
+		"http://[::ffff:127.0.0.1]/mapped",
+		"http://[fc00::1]/private",
+		"http://[fd12:3456:789a::1]/ula",
+		"http://[fe80::1]/link-local",
+		// localhost hostname
+		"http://localhost/admin",
+	];
+
+	for (const url of privateUrls) {
+		it(`blocks private/internal URL: ${url}`, async () => {
+			// fetch should never be called — the SSRF check fires first
+			const fetchSpy = mock(async () => ({ ok: true }));
+			globalThis.fetch = fetchSpy as unknown as typeof fetch;
+
+			await expect(
+				callTool("send_message", {
+					channelId: CHANNEL_GENERAL.id,
+					attachmentUrls: [url],
+				}),
+			).rejects.toBeInstanceOf(UserError);
+
+			expect(fetchSpy).not.toHaveBeenCalled();
+		});
+	}
+});
+
 // ── send_webhook_message attachment tests ─────────────────────────────────────
 
 describe("send_webhook_message — native attachments", () => {

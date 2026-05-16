@@ -298,8 +298,9 @@ export function registerChannelTools(
 				// biome-ignore lint/suspicious/noExplicitAny: channel narrowed to guild channel via "edit" check above
 				await (channel as any).edit(options);
 
-				const name = "name" in channel ? channel.name : args.channelId;
-				return `✅ Updated channel "${name}" (ID: ${args.channelId})`;
+				// Use the requested new name if provided; otherwise fall back to the current name
+				const displayName = args.name ?? ("name" in channel ? channel.name : args.channelId);
+				return `✅ Updated channel "${displayName}" (ID: ${args.channelId})`;
 			});
 		},
 	});
@@ -357,7 +358,7 @@ export function registerChannelTools(
 	server.addTool({
 		name: "set_channel_permissions",
 		description:
-			"Set or remove permission overwrites for a user or role on a channel. Pass allow and deny as arrays of Discord permission flag names (e.g. 'SendMessages', 'ViewChannel', 'ManageMessages'). Set deleteOverwrite to true to remove an existing overwrite entirely. Requires Manage Roles permission.",
+			"Set or remove permission overwrites for a user or role on a channel. Pass allow and deny as arrays of Discord permission flag names (e.g. 'SendMessages', 'ViewChannel', 'ManageMessages'). Set deleteOverwrite to true to remove an existing overwrite entirely. Requires MANAGE_CHANNELS permission (and MANAGE_ROLES when setting role permission overwrites).",
 		parameters: z.object({
 			channelId: z.string().describe("ID of the channel to modify permissions on."),
 			targetId: z.string().describe("ID of the user or role to set permissions for."),
@@ -512,12 +513,15 @@ export function registerChannelTools(
 	server.addTool({
 		name: "move_channel",
 		description:
-			"Move a channel into a category. Use this to organize channels under category groups.",
+			"Move a channel into a category. Requires MANAGE_CHANNELS permission. When moving into a category, also requires MANAGE_ROLES to sync permission overwrites with the parent.",
 		parameters: z.object({
 			channelId: z.string().describe("ID of the channel to move."),
 			categoryId: z
 				.string()
-				.describe("ID of the category to move the channel into. Use null to remove from category."),
+				.nullable()
+				.describe(
+					"ID of the category to move the channel into. Pass null to remove from any category.",
+				),
 		}),
 		execute: async (args) => {
 			return withDiscordErrorHandling(async () => {
@@ -529,8 +533,18 @@ export function registerChannelTools(
 					throw new UserError("This channel type cannot be moved.");
 				}
 				const name = "name" in channel ? channel.name : args.channelId;
-				await (channel as NonThreadGuildBasedChannel).setParent(args.categoryId);
-				return `✅ Moved "${name}" into category ${args.categoryId}`;
+				// Normalize: MCP clients may pass the string "null" instead of JSON null.
+				const categoryId =
+					args.categoryId === null || args.categoryId === "null" ? null : args.categoryId;
+				// lockPermissions: true syncs permission overwrites with the parent category when
+				// moving into one (discord.js default). Must be false when uncategorizing (null) —
+				// there is no parent to sync from and discord.js's default causes a malformed
+				// API body in that case.
+				await (channel as NonThreadGuildBasedChannel).setParent(categoryId, {
+					lockPermissions: categoryId !== null,
+				});
+				const destination = categoryId ? `category ${categoryId}` : "no category";
+				return `✅ Moved "${name}" to ${destination}`;
 			});
 		},
 	});

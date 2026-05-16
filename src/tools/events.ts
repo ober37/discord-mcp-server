@@ -188,6 +188,10 @@ export function registerEventTools(server: FastMCP, client: Client, defaultGuild
 								: GuildScheduledEventStatus.Canceled;
 				}
 
+				if (Object.keys(updates).length === 0) {
+					return "No changes specified.";
+				}
+
 				const updated = await event.edit(updates);
 				return `✅ Updated scheduled event "${updated.name}" (ID: ${updated.id})`;
 			});
